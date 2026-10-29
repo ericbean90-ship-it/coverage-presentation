@@ -112,12 +112,19 @@ h3{font-size:1.18rem;margin:0}
   box-shadow:0 6px 16px -6px rgba(0,0,0,.45);pointer-events:none;will-change:transform}
 .dots i{aspect-ratio:1;border-radius:50%;background:var(--dot);display:block}
 .dots i.on{background:var(--risk)}
+.duo{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px 36px;align-items:end}
+.duo .lab{color:var(--muted);font-weight:600;font-size:.92rem;margin-bottom:6px}
+.duo .mid{font-family:var(--display);font-weight:700;font-size:clamp(2.2rem,4.2vw,3.2rem);line-height:1.05;font-variant-numeric:tabular-nums}
+.duo .note{font-size:.82rem;color:var(--muted);margin-top:6px}
+.duo .big{font-size:clamp(3.2rem,6.4vw,5.4rem)}
+table.surv td{font-size:1.25rem}
+table.surv td b{color:var(--accent)}
 .stat .lab{font-size:.92rem;color:var(--muted)}
 .stat .val{font-family:var(--display);font-weight:700;font-size:2.4rem;line-height:1.15;font-variant-numeric:tabular-nums}
 .stat .note{font-size:.82rem;color:var(--muted)}
 .stat.surv .val{color:var(--accent)}
 .svgbox{overflow-x:auto}
-svg text{font-family:var(--mono);font-size:15px;fill:var(--muted)}
+svg text{font-family:var(--mono);font-size:24px;fill:var(--muted)}
 
 /* 섹션 3 */
 .lead{font-size:1.12rem;margin:0;max-width:70ch}
@@ -269,23 +276,18 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
           <div class="age"><input id="ageNum" type="number" min="0" max="99" value="55" inputmode="numeric"><span style="color:var(--muted)">세</span>
             <input id="ageRange" type="range" min="0" max="99" value="55" aria-label="나이 슬라이더"></div></div>
       </div>
-      <div aria-live="polite">
-        <div style="color:var(--muted);font-weight:600">기대여명 동안 암에 걸릴 확률</div>
-        <div class="big"><span id="riskVal">–</span><small>%</small></div>
-        <p class="p" id="heroSub" style="margin-top:14px;max-width:38ch"></p>
+      <div class="duo" aria-live="polite">
+        <div><div class="lab">기대여명</div><div class="mid" id="exVal">–</div><div class="note" id="exNote"></div></div>
+        <div><div class="lab">기대여명 동안 암에 걸릴 확률</div><div class="big"><span id="riskVal">–</span><small>%</small></div></div>
       </div>
+      <p class="p" id="heroSub" style="max-width:44ch"></p>
       <div class="dotwrap" aria-hidden="true"><div class="dots" id="dots"></div><div class="me" id="me">나</div></div>
     </div>
     <div class="card col">
       <h3>나이가 들수록 쌓이는 확률</h3>
-      <div class="svgbox"><svg id="svg" viewBox="0 0 720 330" width="100%" role="img" aria-label="누적 암 발생 확률 곡선"></svg></div>
+      <div class="svgbox"><svg id="svg" viewBox="0 0 720 360" width="100%" role="img" aria-label="누적 암 발생 확률 곡선"></svg></div>
       <p class="src" id="lifeLine"></p>
     </div>
-  </div>
-  <div class="g3">
-    <div class="card stat"><div class="lab">기대여명</div><div class="val" id="exVal">–</div><div class="note" id="exNote"></div></div>
-    <div class="card stat surv"><div class="lab">암 진단 후 5년 상대생존율</div><div class="val" id="s5">–</div><div class="note">2019–2023년 진단자 · 성별 평균</div></div>
-    <div class="card stat surv"><div class="lab">암 진단 후 10년 상대생존율</div><div class="val" id="s10">–</div><div class="note">2012–2016년 진단자 · 성별 평균</div></div>
   </div>
 </section>
 
@@ -310,6 +312,15 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
       </div>
       <p class="src" style="margin-top:auto">출처: 질병관리청 2023 심뇌혈관질환 발생통계</p>
     </div>
+  </div>
+  <div class="card col" style="gap:14px">
+    <h3>성별로 본 암 상대생존율</h3>
+    <div class="tblbox"><table class="surv" aria-label="성별 5년·10년 상대생존율">
+      <thead><tr><th></th><th>5년 · 2019–2023년 진단</th><th>10년 · 2012–2016년 진단</th></tr></thead>
+      <tbody><tr><td>남녀 전체</td><td><b>73.7%</b></td><td><b>67.2%</b></td></tr>
+        <tr><td>남자</td><td>68.2%</td><td>59.2%</td></tr>
+        <tr><td>여자</td><td>79.4%</td><td>75.1%</td></tr></tbody></table></div>
+    <p class="src">10년 생존율은 2012–2016년 진단자 통계라 최근 치료 성적보다 낮게 나옵니다. 남자가 낮은 것은 생존율이 높은 갑상선암·유방암이 여자에게 많이 생기기 때문으로 분석됩니다. 출처: 2023 국가암등록통계, 국가암정보센터 10년 상대생존율</p>
   </div>
   <div class="dir"><b>설계 방향</b><span>진단금 한 번으로 끝내지 않고, 치료받을 때마다 다시 받는 보장을 중심에 둡니다.</span></div>
 </section>
@@ -605,27 +616,25 @@ function won(m){
     {const on=new Set(ORDER.slice(0,n));[...dots.children].forEach((el,i)=>el.classList.toggle('on',on.has(i)))}
     $('exVal').textContent=fmt(ex)+'년';
     $('exNote').textContent=`약 ${fmt(endAge)}세까지 · 2024년 생명표`;
-    $('s5').textContent=fmt(d.s5)+'%';
-    $('s10').textContent=fmt(d.s10)+'%';
     drawChart(life.path,endAge,win.p);
   }
   function drawChart(path,endAge,pWin){
-    const W=720,H=330,L=56,R=20,T=18,B=40;
+    const W=720,H=360,L=84,R=46,T=28,B=60;
     const x0=path[0][0], x1=Math.max(x0+5,Math.min(100,path[path.length-1][0]));
     const pts=path.filter(p=>p[0]<=x1+1e-9);
     const ymax=Math.max(10,Math.ceil(Math.max(...pts.map(p=>p[1]))*10)*10);
     const sx=v=>L+(v-x0)/(x1-x0)*(W-L-R), sy=v=>T+(1-v/ymax)*(H-T-B);
     let g='';
-    for(let y=0;y<=ymax;y+=10)g+=`<line x1="${L}" x2="${W-R}" y1="${sy(y)}" y2="${sy(y)}" stroke="var(--line)"/><text x="${L-8}" y="${sy(y)+4}" text-anchor="end">${y}%</text>`;
+    for(let y=0;y<=ymax;y+=10)g+=`<line x1="${L}" x2="${W-R}" y1="${sy(y)}" y2="${sy(y)}" stroke="var(--line)"/><text x="${L-12}" y="${sy(y)+8}" text-anchor="end">${y}%</text>`;
     const step=(x1-x0)>40?10:5;
-    for(let a=Math.ceil(x0/step)*step;a<=x1;a+=step)g+=`<text x="${sx(a)}" y="${H-B+20}" text-anchor="middle">${a}세</text>`;
+    for(let a=Math.ceil(x0/step)*step;a<=x1;a+=step)g+=`<text x="${sx(a)}" y="${H-B+34}" text-anchor="middle">${a}세</text>`;
     const line=pts.map((p,i)=>(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]*100).toFixed(1)).join(' ');
     const wp=pts.filter(p=>p[0]<=endAge+1e-9);
     const area='M'+sx(x0)+' '+sy(0)+' '+wp.map(p=>'L'+sx(p[0]).toFixed(1)+' '+sy(p[1]*100).toFixed(1)).join(' ')+` L${sx(endAge).toFixed(1)} ${sy(pWin*100).toFixed(1)} L${sx(endAge).toFixed(1)} ${sy(0)} Z`;
     g+=`<path d="${area}" fill="var(--risk-soft)"/><path d="${line}" fill="none" stroke="var(--risk)" stroke-width="3" stroke-linejoin="round"/>`;
     if(endAge<=x1){
-      const ex=sx(endAge),ey=sy(pWin*100),anc=ex>W-150?'end':'start',dx=anc==='end'?-12:12;
-      g+=`<line x1="${ex}" x2="${ex}" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="5 5"/><circle cx="${ex}" cy="${ey}" r="6" fill="var(--risk)" stroke="#fff" stroke-width="2"/><text x="${ex+dx}" y="${Math.max(T+14,ey-12)}" text-anchor="${anc}" style="fill:var(--ink);font-size:16px;font-weight:500">${endAge.toFixed(1)}세 · ${(pWin*100).toFixed(1)}%</text>`;
+      const ex=sx(endAge),ey=sy(pWin*100),anc=ex>W-260?'end':'start',dx=anc==='end'?-14:14;
+      g+=`<line x1="${ex}" x2="${ex}" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="5 5"/><circle cx="${ex}" cy="${ey}" r="6" fill="var(--risk)" stroke="#fff" stroke-width="2"/><text x="${ex+dx}" y="${Math.max(T+22,ey-16)}" text-anchor="${anc}" style="fill:var(--ink);font-size:26px;font-weight:600">${endAge.toFixed(1)}세 · ${(pWin*100).toFixed(1)}%</text>`;
     }
     $('svg').innerHTML=g;
   }
