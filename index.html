@@ -173,7 +173,8 @@ details.more .body{margin-top:12px}
 table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
 th,td{border-bottom:1px solid var(--line);padding:10px 14px;text-align:right;white-space:nowrap}
 #cvTbl th,#cvTbl td{padding-left:10px;padding-right:10px}
-#cvTbl td:first-child,#cvTbl td:last-child{white-space:normal}
+#cvTbl td:first-child,#cvTbl td.wrap{white-space:normal}
+#cvTbl .mw{display:none}
 #cvTbl td:first-child{min-width:6.5em}
 #cvTbl .pn{display:block;font-size:.82em;color:var(--muted);line-height:1.3}
 .g2.cv{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
@@ -223,6 +224,14 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
   .limits{margin-left:0}
   .fs{display:none}
   .ctlToggle{display:flex}
+  nav.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 8px;overflow:visible;padding-bottom:4px}
+  nav.tabs a{padding:10px 4px 8px;font-size:.86rem;white-space:normal;line-height:1.3}
+  .brand{font-size:1rem}
+  #cvTbl th:nth-child(2),#cvTbl td:nth-child(2){display:none}
+  #cvTbl .mw{display:block;font-size:.8em;color:var(--muted);line-height:1.3;margin-top:2px}
+  #cvTbl td,#cvTbl th{padding:10px 8px}
+  th{white-space:normal}
+  .pos .lg{display:none}
   .limits.collapsed{display:none}
 }
 </style>
@@ -576,7 +585,7 @@ function won(m){
     $('subtabs').innerHTML=sib.length>1?sib.map(x=>`<a href="#${x.id}" class="${x.id===v.id?'on':''}">${x.l}</a>`).join(''):`<span style="color:var(--muted);font-weight:600">${SECS[v.s]}</span>`;
     $('limits').hidden=v.s!==2; $('ctlToggle').hidden=v.s!==2;
     $('prev').disabled=i===0; $('next').disabled=i===VIEWS.length-1;
-    $('pos').innerHTML=`<b>${i+1}</b> / ${VIEWS.length} · ${SECS[v.s]}${sib.length>1?' · '+v.l:''}`;
+    $('pos').innerHTML=`<b>${i+1}</b> / ${VIEWS.length}<span class="lg"> · ${SECS[v.s]}${sib.length>1?' · '+v.l:''}</span>`;
     $('stage').scrollTop=0;
   }
   function go(d){const i=Math.max(0,Math.min(VIEWS.length-1,cur+d)); if(i!==cur) location.hash=VIEWS[i].id}
@@ -703,8 +712,8 @@ function won(m){
     $('cvLimTxt').textContent=won(VL);
     const cr=[['혈전제거술','thrombectomy','연 1회'],['혈전용해치료','thrombolysis','연 1회'],['수술 (혈전 치료 제외)','surgery','수술 1회당'],['중환자실 치료','icu','연 1회'],['부분체외순환 (ECMO)','ecmo','연 1회'],['지속적신대체요법 (CRRT)','crrt','연 1회'],['인공호흡기 (12시간 초과)','vent','연 1회'],['저체온요법','hypo','연 1회']];
     $('cvTbl').innerHTML=`<thead><tr><th>치료 항목</th><th>지급</th><th>금액</th></tr></thead><tbody>`+
-      cr.map(([n,k,w])=>`<tr><td>${n.replace(/\s\((.+)\)$/,'<span class="pn">($1)</span>')}</td><td style="color:var(--muted)">${w}</td><td><b>${c[k].toLocaleString()}만원</b></td></tr>`).join('')+
-      `<tr><td>검사</td><td style="color:var(--muted)">연 1회씩</td><td>CT ${c.ct} · MRI ${c.mri} · PET ${c.pet}만원</td></tr><tr><td>재활치료</td><td style="color:var(--muted)">1일 · 연 15회</td><td>${c.rehab}만원</td></tr></tbody>`;
+      cr.map(([n,k,w])=>`<tr><td>${n.replace(/\s\((.+)\)$/,'<span class="pn">($1)</span>')}<span class="mw">${w}</span></td><td style="color:var(--muted)">${w}</td><td><b>${c[k].toLocaleString()}만원</b></td></tr>`).join('')+
+      `<tr><td>검사<span class="mw">연 1회씩</span></td><td style="color:var(--muted)">연 1회씩</td><td class="wrap">CT ${c.ct} · MRI ${c.mri} · PET ${c.pet}만원</td></tr><tr><td>재활치료<span class="mw">1일 · 연 15회</span></td><td style="color:var(--muted)">1일 · 연 15회</td><td>${c.rehab}만원</td></tr></tbody>`;
     $('cvCases').innerHTML=circCases(VL).map(cs=>`<div class="case"><div class="t2"><span style="font-size:1.1rem">${cs.name}</span><b>${won(sum(cs.parts))}</b></div>
       <div class="stack" style="height:28px">${stack(cs.parts,8000)}</div><div class="how">${how(cs.parts)}</div></div>`).join('');
     document.querySelectorAll('[data-c]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.c===CL));
