@@ -23,7 +23,7 @@
 [hidden]{display:none!important}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;word-break:keep-all;
-  display:grid;grid-template-rows:auto auto minmax(0,1fr) auto}
+  display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr)}
 button{font:inherit}
 .pad{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px))}
 
@@ -157,6 +157,11 @@ details.more .body{margin-top:12px}
 .tblbox{overflow-x:auto}
 table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
 th,td{border-bottom:1px solid var(--line);padding:10px 14px;text-align:right;white-space:nowrap}
+#cvTbl th,#cvTbl td{padding-left:10px;padding-right:10px}
+#cvTbl td:first-child,#cvTbl td:last-child{white-space:normal}
+#cvTbl td:first-child{min-width:6.5em}
+#cvTbl .pn{display:block;font-size:.82em;color:var(--muted);line-height:1.3}
+.g2.cv{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr)}
 th:first-child,td:first-child{text-align:left}
 th{color:var(--muted);font-weight:500;font-size:.92rem}
 td.sel,th.sel{background:var(--accent-soft);font-weight:700;color:var(--ink)}
@@ -194,7 +199,7 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
 
 @media (max-width:860px){
   body{font-size:16px}
-  .g2,.g3,.calc,.combo-top,.brkw{grid-template-columns:1fr}
+  .g2,.g3,.calc,.combo-top,.brkw,.g2.cv{grid-template-columns:minmax(0,1fr)}
   .card{padding:20px}
   .pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   nav.tabs{margin-left:0;width:100%}
@@ -395,7 +400,7 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
 <section class="view pad" data-view="cover-3" hidden>
   <div class="vh"><span class="k">3 · 주요질병의 보장내용 · ③</span><h1>뇌·심장 치료</h1>
     <p>주요순환계질환통합치료 · 연 <b id="cvLimTxt">1억원</b> 한도. 여러 치료를 같은 해에 함께 받으면 각각 나오고, 통합치료는 연간 한도 안에서 지급됩니다.</p></div>
-  <div class="g2">
+  <div class="g2 cv">
     <div class="card tcard"><div class="hd"><h3>치료 예</h3><span class="src">계약 1년 경과</span></div>
       <div id="cvCases" class="col" style="gap:30px"></div>
       <div class="pwbox" id="cvPower" hidden>
@@ -677,7 +682,7 @@ function won(m){
     $('cvLimTxt').textContent=won(VL);
     const cr=[['혈전제거술','thrombectomy','연 1회'],['혈전용해치료','thrombolysis','연 1회'],['수술 (혈전 치료 제외)','surgery','수술 1회당'],['중환자실 치료','icu','연 1회'],['부분체외순환 (ECMO)','ecmo','연 1회'],['지속적신대체요법 (CRRT)','crrt','연 1회'],['인공호흡기 (12시간 초과)','vent','연 1회'],['저체온요법','hypo','연 1회']];
     $('cvTbl').innerHTML=`<thead><tr><th>치료 항목</th><th>지급</th><th>금액</th></tr></thead><tbody>`+
-      cr.map(([n,k,w])=>`<tr><td>${n}</td><td style="color:var(--muted)">${w}</td><td><b>${c[k].toLocaleString()}만원</b></td></tr>`).join('')+
+      cr.map(([n,k,w])=>`<tr><td>${n.replace(/\s\((.+)\)$/,'<span class="pn">($1)</span>')}</td><td style="color:var(--muted)">${w}</td><td><b>${c[k].toLocaleString()}만원</b></td></tr>`).join('')+
       `<tr><td>검사</td><td style="color:var(--muted)">연 1회씩</td><td>CT ${c.ct} · MRI ${c.mri} · PET ${c.pet}만원</td></tr><tr><td>재활치료</td><td style="color:var(--muted)">1일 · 연 15회</td><td>${c.rehab}만원</td></tr></tbody>`;
     $('cvCases').innerHTML=circCases(VL).map(cs=>`<div class="case"><div class="t2"><span style="font-size:1.1rem">${cs.name}</span><b>${won(sum(cs.parts))}</b></div>
       <div class="stack" style="height:28px">${stack(cs.parts,8000)}</div><div class="how">${how(cs.parts)}</div></div>`).join('');
