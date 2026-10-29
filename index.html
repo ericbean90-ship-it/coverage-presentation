@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>왜 이렇게 보장 설계를 짰을까</title>
+<title>이 설계는 어떻게 만들어졌나</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,6 +43,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{o
 
 /* 한도 버튼 (섹션 3에서만) */
 .limits[hidden]{display:none!important}
+.ctlToggle{display:none;width:100%;align-items:center;gap:12px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 14px;min-height:46px;cursor:pointer}
+.ctlToggle .ct{font-weight:700;white-space:nowrap}
+.ctlToggle .cs{color:var(--muted);font-size:.86rem;line-height:1.4}
+.ctlToggle[aria-expanded="true"] .ar{display:inline-block;transform:rotate(180deg)}
 .limits{display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center;margin-left:auto}
 .limits .f{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);font-weight:600}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
@@ -101,7 +105,11 @@ h3{font-size:1.18rem;margin:0}
 .age input[type=range]{width:min(300px,62vw);accent-color:var(--accent)}
 .big{font-family:var(--display);font-weight:700;font-size:clamp(4rem,9vw,6.4rem);line-height:1;color:var(--risk);font-variant-numeric:tabular-nums}
 .big small{font-size:.38em;margin-left:4px}
-.dots{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:240px}
+.dotwrap{position:relative;width:100%;max-width:240px}
+.dots{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;width:100%}
+.me{position:absolute;left:0;top:0;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.3);border:3px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:var(--ink);
+  box-shadow:0 6px 16px -6px rgba(0,0,0,.45);pointer-events:none;will-change:transform}
 .dots i{aspect-ratio:1;border-radius:50%;background:var(--dot);display:block}
 .dots i.on{background:var(--risk)}
 .stat .lab{font-size:.92rem;color:var(--muted)}
@@ -207,6 +215,8 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
   .brand{padding-top:12px}
   .limits{margin-left:0}
   .fs{display:none}
+  .ctlToggle{display:flex}
+  .limits.collapsed{display:none}
 }
 </style>
 </head>
@@ -214,14 +224,15 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
 
 <header class="bar">
   <div class="in pad">
-    <div class="brand">왜 이렇게 보장 설계를 짰을까</div>
+    <div class="brand">이 설계는 어떻게 만들어졌나</div>
     <nav class="tabs" aria-label="섹션" id="tabs"></nav>
   </div>
 </header>
 
 <div class="subbar pad" id="subbar">
   <div class="subtabs" id="subtabs"></div>
-  <div class="limits" id="limits" hidden>
+  <button type="button" class="ctlToggle" id="ctlToggle" aria-expanded="false" aria-controls="limits" hidden><span class="ct">설정 <span class="ar">▾</span></span><span class="cs" id="ctlSum"></span></button>
+  <div class="limits collapsed" id="limits" hidden>
     <div class="f"><span id="cLab">암통합치료</span>
       <div class="seg" role="group" aria-labelledby="cLab">
         <button type="button" data-c="5000" aria-pressed="false">5천만</button>
@@ -263,7 +274,7 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
         <div class="big"><span id="riskVal">–</span><small>%</small></div>
         <p class="p" id="heroSub" style="margin-top:14px;max-width:38ch"></p>
       </div>
-      <div class="dots" id="dots" aria-hidden="true"></div>
+      <div class="dotwrap" aria-hidden="true"><div class="dots" id="dots"></div><div class="me" id="me">나</div></div>
     </div>
     <div class="card col">
       <h3>나이가 들수록 쌓이는 확률</h3>
@@ -552,7 +563,7 @@ function won(m){
     document.querySelectorAll('#tabs a').forEach(a=>a.classList.toggle('on',+a.dataset.s===v.s));
     const sib=VIEWS.filter(x=>x.s===v.s);
     $('subtabs').innerHTML=sib.length>1?sib.map(x=>`<a href="#${x.id}" class="${x.id===v.id?'on':''}">${x.l}</a>`).join(''):`<span style="color:var(--muted);font-weight:600">${SECS[v.s]}</span>`;
-    $('limits').hidden=v.s!==2;
+    $('limits').hidden=v.s!==2; $('ctlToggle').hidden=v.s!==2;
     $('prev').disabled=i===0; $('next').disabled=i===VIEWS.length-1;
     $('pos').innerHTML=`<b>${i+1}</b> / ${VIEWS.length} · ${SECS[v.s]}${sib.length>1?' · '+v.l:''}`;
     $('stage').scrollTop=0;
@@ -580,6 +591,7 @@ function won(m){
   let sex='M', age=55;
   const dots=$('dots');
   for(let i=0;i<100;i++)dots.appendChild(document.createElement('i'));
+  const ORDER=[...Array(100).keys()];for(let i=99;i>0;i--){const j=Math.floor(Math.random()*(i+1));[ORDER[i],ORDER[j]]=[ORDER[j],ORDER[i]]}  // 빨간 점 자리를 무작위로 정함
   const fmt=(v,n=1)=>v.toFixed(n);
   const groups=['0–9','10–19','20–29','30–39','40–49','50–59','60–69','70–79','80+'];
   $('srcRows').innerHTML=groups.map((g,i)=>`<tr><td>${g}세</td><td>${LT.M.inc[i].toLocaleString()}</td><td>${LT.F.inc[i].toLocaleString()}</td><td>${LT.M.prev[i].toLocaleString()}</td><td>${LT.F.prev[i].toLocaleString()}</td></tr>`).join('');
@@ -590,7 +602,7 @@ function won(m){
     $('riskVal').textContent=fmt(pct);
     $('heroSub').innerHTML=`${age}세 ${sex==='M'?'남자':'여자'}가 기대여명인 <b>${fmt(endAge)}세까지</b> 사는 동안, 100명 중 약 <b>${n}명</b>이 한 번 이상 암 진단을 받습니다.`;
     $('lifeLine').textContent=`점선은 기대여명이 끝나는 나이입니다. 그보다 오래 사는 경우까지 포함한 남은 평생 기준은 ${fmt(life.p*100)}%입니다.`;
-    [...dots.children].forEach((el,i)=>el.classList.toggle('on',i<n));
+    {const on=new Set(ORDER.slice(0,n));[...dots.children].forEach((el,i)=>el.classList.toggle('on',on.has(i)))}
     $('exVal').textContent=fmt(ex)+'년';
     $('exNote').textContent=`약 ${fmt(endAge)}세까지 · 2024년 생명표`;
     $('s5').textContent=fmt(d.s5)+'%';
@@ -689,12 +701,41 @@ function won(m){
     document.querySelectorAll('[data-c]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.c===CL));
     document.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===VL));
     document.querySelectorAll('[data-p]').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.p==='1')===POWER));
+    const sh=l=>({5000:'5천만',8000:'8천만',10000:'1억'})[l];
+    $('ctlSum').textContent=`암통합 ${sh(CL)} · 순환계 ${sh(VL)} · 진단금 ${DIAG?won(DIAG):'없음'} · 파워수술 ${POWER?'있음':'없음'}`;
   }
   document.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click',()=>{CL=+b.dataset.c;renderCover()}));
   document.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>{VL=+b.dataset.v;renderCover()}));
   document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{POWER=b.dataset.p==='1';renderCover()}));
   $('diagIn').addEventListener('input',e=>{const v=Math.max(0,Math.round(+e.target.value||0));DIAG=v;renderCover()});
   renderCover();
+
+  $('ctlToggle').addEventListener('click',()=>{
+    const open=$('limits').classList.toggle('collapsed')===false;
+    $('ctlToggle').setAttribute('aria-expanded',open);
+  });
+
+  /* ---------- "나" 동그라미: 100명 정사각형 안을 무작위로 떠다님 ---------- */
+  (function(){
+    const me=$('me'), box=me.parentElement, riskView=document.querySelector('[data-view="risk"]');
+    let x=0,y=0,fx=0,fy=0,tx=0,ty=0,t0=0,dur=2200,started=false;
+    function pick(now){
+      const W=box.clientWidth-me.offsetWidth, H=box.clientHeight-me.offsetHeight;
+      fx=x; fy=y; tx=Math.random()*Math.max(0,W); ty=Math.random()*Math.max(0,H);
+      t0=now; dur=1800+Math.random()*1800;
+    }
+    function frame(now){
+      if(!riskView.hidden && box.clientWidth){
+        if(!started){x=(box.clientWidth-me.offsetWidth)/2;y=(box.clientHeight-me.offsetHeight)/2;pick(now);started=true}
+        let k=Math.min(1,(now-t0)/dur); k=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;
+        x=fx+(tx-fx)*k; y=fy+(ty-fy)*k;
+        me.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`;
+        if(now-t0>=dur)pick(now);
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
 
   show(location.hash.slice(1)||'risk');
 })();
