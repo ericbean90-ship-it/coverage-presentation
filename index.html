@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>왜 이렇게 보장 설계를 짰을까</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;700&display=swap">
+<style>
+/* Layout: 발표용 웹 슬라이드 — 상단 섹션 메뉴, 섹션 안 화면 선택, 가운데 넓은 무대, 아래 이전/다음 */
+:root{
+  --bg:#f2f4f5; --surface:#ffffff; --ink:#16232b; --muted:#56656e; --line:#d8dfe3; --soft:#eaeff1;
+  --accent:#1f6e74; --accent-soft:#dcecec; --risk:#c2513f; --risk-soft:#f6e1dc; --dot:#cfd8dc;
+  --c1:#1f6e74; --c2:#76adb1; --c3:#b8862e; --c4:#8a8f96; --cv:#8e1f3f; --cv2:#cf96a6;
+  --display:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;
+  --body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;word-break:keep-all;
+  display:grid;grid-template-rows:auto auto minmax(0,1fr) auto}
+button{font:inherit}
+.pad{padding-left:max(28px,env(safe-area-inset-left,0px));padding-right:max(28px,env(safe-area-inset-right,0px))}
+
+/* 머리 */
+header.bar{background:var(--surface);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+header.bar .in{display:flex;align-items:center;gap:24px;min-height:62px;flex-wrap:wrap}
+.brand{font-family:var(--display);font-weight:700;font-size:1.12rem;white-space:nowrap}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+nav.tabs a{display:flex;align-items:center;gap:8px;padding:18px 14px 15px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+nav.tabs a .n{font-family:var(--mono);font-size:.8rem;font-weight:500}
+nav.tabs a.on{color:var(--ink);border-bottom-color:var(--accent)}
+.subbar{display:flex;align-items:center;gap:12px 24px;flex-wrap:wrap;min-height:58px;padding-block:10px}
+.subtabs{display:flex;gap:8px;flex-wrap:wrap}
+.subtabs a{padding:7px 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);text-decoration:none;font-weight:600;font-size:.92rem}
+.subtabs a.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+
+/* 한도 버튼 (섹션 3에서만) */
+.limits[hidden]{display:none!important}
+.limits{display:flex;gap:10px 22px;flex-wrap:wrap;align-items:center;margin-left:auto}
+.limits .f{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--muted);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:transparent;color:var(--ink);padding:8px 18px;font-weight:600;cursor:pointer;min-height:44px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+
+/* 무대 */
+main.stage{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.view{max-width:1220px;margin:0 auto;padding-block:20px 48px;display:flex;flex-direction:column;gap:28px}
+.view[hidden]{display:none}
+@media (prefers-reduced-motion:no-preference){.view{animation:in .35s ease}}
+@keyframes in{from{opacity:.0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.vh{display:flex;flex-direction:column;gap:8px}
+.vh .k{font-size:.88rem;font-weight:600;color:var(--accent)}
+.vh h1{font-family:var(--display);font-size:clamp(1.7rem,3.4vw,2.6rem);line-height:1.25;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.vh p{margin:0;color:var(--muted);font-size:1.05rem;max-width:62ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.num{font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.05}
+.src{font-size:.82rem;color:var(--muted);margin:0}
+.p{margin:0;font-size:1.05rem}
+.col{display:flex;flex-direction:column;gap:16px}
+.dir{display:flex;gap:18px;align-items:baseline;background:var(--accent-soft);border-radius:14px;padding:22px 28px}
+.dir b{font-size:.9rem;color:var(--accent);white-space:nowrap;letter-spacing:.02em}
+.dir span{font-family:var(--display);font-weight:600;font-size:clamp(1.12rem,2vw,1.4rem);line-height:1.5;text-wrap:balance}
+.kpi{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap}
+.kpi .num{font-size:clamp(3rem,6vw,4.6rem);color:var(--accent)}
+.kpi .num.cv{color:var(--cv)}
+.kpi .lb{color:var(--muted);line-height:1.45;padding-bottom:6px}
+.hbar{display:grid;grid-template-columns:7em minmax(0,1fr) 4.2em;gap:14px;align-items:center}
+.hbar .tr{height:18px;background:var(--soft);border-radius:3px;overflow:hidden}
+.hbar .fl{height:100%;background:var(--c1)}
+.hbar .fl.faint{background:var(--c2)}
+.hbar .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.bars{display:flex;flex-direction:column;gap:12px}
+.rows{display:flex;flex-direction:column}
+.rows div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:10px 0;font-size:1.08rem}
+.rows div:last-child{border-bottom:0}
+.rows b{color:var(--cv)}
+.cols5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;align-items:end;height:200px;border-bottom:1px solid var(--line)}
+.cols5 div{display:flex;flex-direction:column;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
+.cols5 i{display:block;width:100%;background:var(--cv2);border-radius:3px 3px 0 0}
+.cols5 div:first-child i{background:var(--cv)}
+.cols5 div:first-child span{font-weight:700;color:var(--cv)}
+.cap5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px;color:var(--muted);text-align:center;font-size:.92rem}
+h3{font-size:1.18rem;margin:0}
+
+/* 섹션 1 */
+.calc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:24px;align-items:stretch}
+.inputs{display:flex;flex-wrap:wrap;gap:20px 32px}
+.field{display:flex;flex-direction:column;gap:8px}
+.field .lab,.field label{font-size:.88rem;color:var(--muted);font-weight:600}
+.age{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.age input[type=number]{font:600 1.3rem var(--mono);width:4.6em;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.age input[type=range]{width:min(300px,62vw);accent-color:var(--accent)}
+.big{font-family:var(--display);font-weight:700;font-size:clamp(4rem,9vw,6.4rem);line-height:1;color:var(--risk);font-variant-numeric:tabular-nums}
+.big small{font-size:.38em;margin-left:4px}
+.dots{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:240px}
+.dots i{aspect-ratio:1;border-radius:50%;background:var(--dot);display:block}
+.dots i.on{background:var(--risk)}
+.stat .lab{font-size:.92rem;color:var(--muted)}
+.stat .val{font-family:var(--display);font-weight:700;font-size:2.4rem;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat .note{font-size:.82rem;color:var(--muted)}
+.stat.surv .val{color:var(--accent)}
+.svgbox{overflow-x:auto}
+svg text{font-family:var(--mono);font-size:15px;fill:var(--muted)}
+
+/* 섹션 3 */
+.lead{font-size:1.12rem;margin:0;max-width:70ch}
+.lead b{color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:.88rem;color:var(--muted)}
+.legend i{display:inline-block;width:13px;height:13px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+.tg{display:inline-block;font-size:.76rem;border-radius:9px;padding:0 8px;line-height:1.6;border:1px solid var(--muted);color:var(--muted);margin-left:8px;vertical-align:2px;white-space:nowrap;font-weight:500}
+.tg.n{border-color:var(--risk);color:var(--risk)}
+.tcard{display:flex;flex-direction:column;gap:24px}
+.tcard .hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.tcard .hd h3{font-family:var(--display);font-size:1.4rem}
+.case{display:flex;flex-direction:column;gap:8px}
+.case .t2{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.case .t2 span{font-weight:600}
+.case .t2 b{font-family:var(--display);font-size:1.45rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stack{display:flex;height:22px;border-radius:4px;overflow:hidden;background:var(--soft)}
+.stack i{display:block;height:100%;border-right:2px solid var(--surface)}
+.stack i:last-child{border-right:0}
+@media (prefers-reduced-motion:no-preference){.stack i,.meter .fl{transition:width .4s ease}}
+.case .how{font-size:.86rem;color:var(--muted);line-height:1.5}
+.money{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0 10px 0 4px;min-height:44px}
+.money input{font:600 1.05rem var(--mono);width:5.2em;border:0;background:transparent;color:var(--ink);padding:6px;text-align:right}
+.money input:focus{outline:none}
+.money:focus-within{outline:2.5px solid var(--accent);outline-offset:2px}
+.money span{color:var(--muted);font-weight:500}
+.stack.dash{background:transparent;border:2px dashed var(--c4)}
+.s-diag{background:var(--ink)}
+.s-pw{background:repeating-linear-gradient(135deg,var(--c4) 0 6px,transparent 6px 11px);border:1.5px dashed var(--c4)}
+.case b.q,.brk .q{font-family:var(--body);font-size:1.02rem;font-weight:700;color:var(--muted)}
+.pwbox{border:2px dashed var(--c4);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.pwbox .t2{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.pwbox .t2 span{font-weight:700}
+.total .plus{display:block;font-size:.36em;color:var(--muted);font-family:var(--body);font-weight:700;margin-top:10px;white-space:nowrap}
+.sumrow .plus{display:inline;font-size:.6em;margin-left:8px}
+.brk.pw{border-style:dashed;border-width:2px}
+.sumrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;border-top:2px solid var(--ink);padding-top:14px}
+.sumrow b{font-family:var(--display);font-size:1.6rem}
+.s-base{background:var(--c1)} .s-add{background:var(--c2)} .s-prem{background:var(--c3)} .s-sep{background:var(--c4)} .s-cv{background:var(--cv)} .s-cv2{background:var(--cv2)}
+details.more{background:transparent;border:0;padding:0}
+details.more summary{cursor:pointer;color:var(--accent);font-weight:600;list-style:none;display:inline-flex;gap:8px;align-items:center;padding:6px 0}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:"+";font-family:var(--mono);font-size:1.1rem}
+details.more[open] summary::before{content:"−"}
+details.more .body{margin-top:12px}
+.tblbox{overflow-x:auto}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:10px 14px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:.92rem}
+td.sel,th.sel{background:var(--accent-soft);font-weight:700;color:var(--ink)}
+.combo-top{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:32px;align-items:center}
+.total .num{font-size:clamp(2.6rem,5.2vw,4.4rem);color:var(--accent);white-space:nowrap}
+.total .sub{color:var(--muted);margin-top:8px}
+.bigstack{height:44px;border-radius:6px}
+.meter{display:flex;flex-direction:column;gap:8px;margin-top:22px}
+.meter .tr{height:18px;background:var(--soft);border-radius:4px;overflow:hidden}
+.meter .fl{height:100%;background:var(--c1)}
+.meter .ml{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:var(--muted);font-size:.92rem}
+.brk{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 24px;font-variant-numeric:tabular-nums}
+.brk .h{font-weight:700;margin-top:4px}
+.brk .r{text-align:right}
+.brk .tt{border-top:2px solid var(--ink);padding-top:8px;font-weight:700;font-size:1.1rem}
+.brkw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.lists ul{margin:.6rem 0 0;padding-left:1.2rem}
+.lists li{margin:.5rem 0}
+.fine{font-size:.88rem;color:var(--muted);line-height:1.7;margin:0;max-width:85ch}
+
+/* 섹션 4 */
+.basis details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 24px}
+.basis summary{cursor:pointer;font-weight:600;font-size:1.05rem}
+.basis ul{margin:.8rem 0 0;padding-left:1.2rem;max-width:80ch}
+.basis li{margin:.4rem 0}
+
+/* 아래 막대 */
+footer.ctl{background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
+.nb{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:10px 18px;font-weight:600;cursor:pointer;min-height:44px}
+.nb:disabled{opacity:.35;cursor:default}
+.pos{flex:1;text-align:center;color:var(--muted);font-size:.95rem;font-variant-numeric:tabular-nums}
+.pos b{color:var(--ink)}
+.fs{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:10px;min-height:44px;font-weight:600;font-size:.88rem}
+
+@media (max-width:860px){
+  body{font-size:16px}
+  .g2,.g3,.calc,.combo-top,.brkw{grid-template-columns:1fr}
+  .card{padding:20px}
+  .pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  nav.tabs{margin-left:0;width:100%}
+  header.bar .in{gap:0}
+  .brand{padding-top:12px}
+  .limits{margin-left:0}
+  .fs{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="in pad">
+    <div class="brand">왜 이렇게 보장 설계를 짰을까</div>
+    <nav class="tabs" aria-label="섹션" id="tabs"></nav>
+  </div>
+</header>
+
+<div class="subbar pad" id="subbar">
+  <div class="subtabs" id="subtabs"></div>
+  <div class="limits" id="limits" hidden>
+    <div class="f"><span id="cLab">암통합치료</span>
+      <div class="seg" role="group" aria-labelledby="cLab">
+        <button type="button" data-c="5000" aria-pressed="false">5천만</button>
+        <button type="button" data-c="8000" aria-pressed="false">8천만</button>
+        <button type="button" data-c="10000" aria-pressed="true">1억</button></div></div>
+    <div class="f"><span id="vLab">순환계통합치료</span>
+      <div class="seg" role="group" aria-labelledby="vLab">
+        <button type="button" data-v="5000" aria-pressed="false">5천만</button>
+        <button type="button" data-v="8000" aria-pressed="false">8천만</button>
+        <button type="button" data-v="10000" aria-pressed="true">1억</button></div></div>
+    <div class="f"><label for="diagIn">암 진단금</label>
+      <span class="money"><input id="diagIn" type="number" min="0" step="500" placeholder="0" inputmode="numeric"><span>만원</span></span></div>
+    <div class="f"><span id="pLab">파워수술</span>
+      <div class="seg" role="group" aria-labelledby="pLab">
+        <button type="button" data-p="1" aria-pressed="false">있음</button>
+        <button type="button" data-p="0" aria-pressed="true">없음</button></div></div>
+  </div>
+</div>
+
+<main class="stage" id="stage">
+
+<!-- 1. 내 암 확률 -->
+<section class="view pad" data-view="risk">
+  <div class="vh"><span class="k">1 · 암이 얼마나 가까이에 있나</span><h1>남은 생애 동안 암에 걸릴 확률</h1>
+    <p>성별과 나이를 고르면, 통계상 기대여명 동안 한 번 이상 암 진단을 받을 확률을 보여줍니다.</p></div>
+  <div class="calc">
+    <div class="card col" style="gap:26px">
+      <div class="inputs">
+        <div class="field"><span class="lab" id="sexLab">성별</span>
+          <div class="seg" role="group" aria-labelledby="sexLab">
+            <button type="button" id="sexM" aria-pressed="true">남자</button>
+            <button type="button" id="sexF" aria-pressed="false">여자</button></div></div>
+        <div class="field"><label for="ageNum">현재 나이 (만)</label>
+          <div class="age"><input id="ageNum" type="number" min="0" max="99" value="55" inputmode="numeric"><span style="color:var(--muted)">세</span>
+            <input id="ageRange" type="range" min="0" max="99" value="55" aria-label="나이 슬라이더"></div></div>
+      </div>
+      <div aria-live="polite">
+        <div style="color:var(--muted);font-weight:600">기대여명 동안 암에 걸릴 확률</div>
+        <div class="big"><span id="riskVal">–</span><small>%</small></div>
+        <p class="p" id="heroSub" style="margin-top:14px;max-width:38ch"></p>
+      </div>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+    </div>
+    <div class="card col">
+      <h3>나이가 들수록 쌓이는 확률</h3>
+      <div class="svgbox"><svg id="svg" viewBox="0 0 720 330" width="100%" role="img" aria-label="누적 암 발생 확률 곡선"></svg></div>
+      <p class="src" id="lifeLine"></p>
+    </div>
+  </div>
+  <div class="g3">
+    <div class="card stat"><div class="lab">기대여명</div><div class="val" id="exVal">–</div><div class="note" id="exNote"></div></div>
+    <div class="card stat surv"><div class="lab">암 진단 후 5년 상대생존율</div><div class="val" id="s5">–</div><div class="note">2019–2023년 진단자 · 성별 평균</div></div>
+    <div class="card stat surv"><div class="lab">암 진단 후 10년 상대생존율</div><div class="val" id="s10">–</div><div class="note">2012–2016년 진단자 · 성별 평균</div></div>
+  </div>
+</section>
+
+<!-- 2-1 -->
+<section class="view pad" data-view="trend-1" hidden>
+  <div class="vh"><span class="k">2 · 웬만하면 다 치료한다 · ①</span><h1>생존이 늘고, 관리해야 할 시간이 길어졌습니다</h1></div>
+  <div class="g2">
+    <div class="card col" style="gap:22px">
+      <div class="kpi"><span class="num">73.7%</span><span class="lb">암 5년 상대생존율<br>2019–2023년 진단</span></div>
+      <div class="bars">
+        <div class="hbar"><span>2001–05 진단</span><div class="tr"><div class="fl faint" style="width:54.2%"></div></div><span class="v">54.2%</span></div>
+        <div class="hbar"><span>2019–23 진단</span><div class="tr"><div class="fl" style="width:73.7%"></div></div><span class="v">73.7%</span></div>
+      </div>
+      <p class="p">암유병자 273만 명 중 62.1%가 진단 후 5년 넘게 생존 중입니다.</p>
+      <p class="src">출처: 2023 국가암등록통계, 국립암센터</p>
+    </div>
+    <div class="card col" style="gap:22px">
+      <div class="kpi"><span class="num cv">1.55배</span><span class="lb">심근경색 발생 건수<br>2011년 → 2023년</span></div>
+      <div>
+        <div class="src" style="margin-bottom:4px">발생 후 30일 치명률 (2011년 → 2023년)</div>
+        <div class="rows"><div><span>심근경색</span><span>9.7% → <b>8.9%</b></span></div><div><span>뇌졸중</span><span>8.5% → <b>7.5%</b></span></div></div>
+      </div>
+      <p class="src" style="margin-top:auto">출처: 질병관리청 2023 심뇌혈관질환 발생통계</p>
+    </div>
+  </div>
+  <div class="dir"><b>설계 방향</b><span>진단금 한 번으로 끝내지 않고, 치료받을 때마다 다시 받는 보장을 중심에 둡니다.</span></div>
+</section>
+
+<!-- 2-2 -->
+<section class="view pad" data-view="trend-2" hidden>
+  <div class="vh"><span class="k">2 · 웬만하면 다 치료한다 · ②</span><h1>암 치료의 중심, 상급종합병원</h1><p>암 치료가 실제로 이뤄지는 곳</p></div>
+  <div class="card g2" style="align-items:center;gap:40px">
+    <div class="kpi" style="flex-direction:column;align-items:flex-start;gap:8px"><span class="num">70% 이상</span><span class="lb">수술·항암·방사선 입원치료 중<br>상급종합병원에서 받은 비율</span></div>
+    <div class="bars" style="gap:16px">
+      <div class="hbar"><span>위암</span><div class="tr"><div class="fl" style="width:76.0%"></div></div><span class="v">76.0%</span></div>
+      <div class="hbar"><span>폐암</span><div class="tr"><div class="fl" style="width:75.9%"></div></div><span class="v">75.9%</span></div>
+      <div class="hbar"><span>유방암</span><div class="tr"><div class="fl" style="width:72.1%"></div></div><span class="v">72.1%</span></div>
+      <div class="hbar"><span>간암</span><div class="tr"><div class="fl" style="width:70.5%"></div></div><span class="v">70.5%</span></div>
+    </div>
+    <p class="src" style="grid-column:1/-1">출처: 건강보험심사평가원 2주기 암 적정성 평가 (위암·폐암 2022.7~2023.6, 유방암·간암 2023년 진료분)</p>
+  </div>
+  <div class="dir"><b>설계 방향</b><span>상급종합병원 치료를 대비하여 암 치료의 중심을 두텁게 준비합니다.</span></div>
+</section>
+
+<!-- 2-3 -->
+<section class="view pad" data-view="trend-3" hidden>
+  <div class="vh"><span class="k">2 · 웬만하면 다 치료한다 · ③</span><h1>초기 집중, 그리고 재발 보호</h1><p>위험은 첫해에 몰리고, 재발은 오래 남습니다</p></div>
+  <div class="g2">
+    <div class="card col" style="gap:18px">
+      <h3>암 치료비는 첫해에 몰립니다</h3>
+      <span class="src">진단 4년차 진료비 (1년차 = 100)</span>
+      <div class="bars">
+        <div class="hbar"><span>폐암</span><div class="tr"><div class="fl" style="width:8.3%"></div></div><span class="v">8.3</span></div>
+        <div class="hbar"><span>대장암</span><div class="tr"><div class="fl" style="width:12%"></div></div><span class="v">12.0</span></div>
+        <div class="hbar"><span>유방암</span><div class="tr"><div class="fl" style="width:21.2%"></div></div><span class="v">21.2</span></div>
+      </div>
+      <h3 style="margin-top:8px">그래도 재발은 10년을 넘기도 합니다</h3>
+      <p class="p">호르몬 양성 유방암은 5년 호르몬치료 뒤에도 20년차까지 재발이 꾸준합니다(원격재발 위험 10~41%).</p>
+      <p class="p">재발한 갑상선암 환자의 6.7%는 수술 10년 이후에 재발했습니다.</p>
+      <p class="src">출처: 국립암센터 건보 청구자료 분석(2012), NEJM(2017), 가천대 길병원(2017)</p>
+    </div>
+    <div class="card col" style="gap:18px">
+      <h3>뇌졸중 재발은 첫해에 몰립니다</h3>
+      <span class="src">초발 뇌졸중 누적 재발률</span>
+      <div class="cols5" aria-label="1년 8.9%, 2년 10.9%, 3년 12.7%, 4년 14.3%, 5년 15.5%">
+        <div><span>8.9%</span><i style="height:100px"></i></div>
+        <div><span>10.9%</span><i style="height:122px"></i></div>
+        <div><span>12.7%</span><i style="height:142px"></i></div>
+        <div><span>14.3%</span><i style="height:160px"></i></div>
+        <div><span>15.5%</span><i style="height:174px"></i></div>
+      </div>
+      <div class="cap5"><span>1년</span><span>2년</span><span>3년</span><span>4년</span><span>5년</span></div>
+      <p class="p">5년 동안의 재발(15.5%) 가운데 절반 넘게가 첫해(8.9%)에 일어났습니다.</p>
+      <p class="p">2023년 뇌졸중 발생 4건 중 1건(25.3%)은 재발입니다.</p>
+      <p class="src">출처: 질병관리청 초발 뇌졸중 코호트(2022), 2023 심뇌혈관질환 발생통계</p>
+    </div>
+  </div>
+  <div class="dir"><b>설계 방향</b><span>진단 후 1~3년차 3배, 4~5년차 2배를 받는 ‘초기집중보장형’으로 첫 치료를 두텁게, 10년 이후 재발은 기간 제한 없는 보장으로 잇습니다. 해마다 다시 받는 치료별 연간 보장을 중심에 둡니다.</span></div>
+</section>
+
+<!-- 3-1 -->
+<section class="view pad" data-view="cover-1" hidden>
+  <div class="vh"><span class="k">3 · 주요질병의 보장내용 · ①</span><h1>치료를 받을 때마다 이렇게 나옵니다</h1>
+    <p class="lead">암통합치료는 <b>치료 항목마다 정해진 금액</b>을 드리고, 1년 동안 받은 금액의 합계가 <b>연간 한도</b>를 넘으면 넘는 만큼만 빠집니다. 실제 병원비를 한도까지 채워 드리는 방식이 아닙니다.</p></div>
+  <div class="legend">
+    <span><i class="s-base"></i>암통합치료 · 기본 치료</span>
+    <span><i class="s-add"></i>암통합치료 · 추가 항목</span>
+    <span id="dLegend" hidden><i class="s-diag"></i>암 진단금</span>
+    <span><i class="s-prem"></i>초기집중 프리미엄클래스Ⅱ (1~3년차)</span>
+    <span class="pwL" hidden><i class="s-pw"></i>파워수술 (별도 특약)</span>
+    <span><span class="tg n" style="margin-left:0">비급여</span> 전액본인부담(비급여 포함)일 때만</span>
+  </div>
+  <div class="g3" id="tcards"></div>
+  <details class="more"><summary>한도형별 항목 금액표 보기</summary>
+    <div class="body card"><div class="tblbox"><table id="itemTbl" aria-label="암통합치료 한도형별 항목 금액"></table></div></div></details>
+  <p class="fine">치료 1회 기준이며, 막대는 세 그림 모두 같은 눈금(1억원)입니다. 로봇수술은 로봇 사용료가 비급여라 수술이 급여여도 지급됩니다. 갑상선·전립선암 로봇수술은 <span id="robotSp">200만원</span>입니다.</p>
+</section>
+
+<!-- 3-2 -->
+<section class="view pad" data-view="cover-2" hidden>
+  <div class="vh"><span class="k">3 · 주요질병의 보장내용 · ②</span><h1>로봇수술 + 중입자방사선 + 면역항암을 같은 해에 받으면</h1></div>
+  <div class="card combo-top">
+    <div class="total"><div class="num" id="cbTotal">–</div><div class="sub" id="cbSub"></div></div>
+    <div>
+      <div class="stack bigstack" id="cbStack"></div>
+      <div class="legend" style="margin-top:12px"><span class="dL" hidden><i class="s-diag"></i>암 진단금</span><span><i class="s-base"></i>암통합치료</span><span><i class="s-prem"></i>초기집중</span><span><i class="s-sep"></i>항암중입자방사선치료</span><span class="pwL" hidden><i class="s-pw"></i>파워수술</span></div>
+      <div class="meter"><div class="ml"><span>암통합치료 연간 한도 사용</span><span id="mtTxt"></span></div><div class="tr"><div class="fl" id="mtFill"></div></div></div>
+    </div>
+  </div>
+  <div class="brkw" id="cbBrk"></div>
+  <div class="card sumrow" id="cbSum"></div>
+  <div class="g2 lists">
+    <div class="card"><h3>해마다 다시 받는 보장</h3><ul>
+      <li><b>암통합치료 · 주요순환계질환통합치료</b>: 보험연도마다 연간 한도 안에서 다시, 종신까지</li>
+      <li><b>초기집중 프리미엄클래스Ⅱ</b>: 최초 암 진단 후 10년 동안 수술·방사선·약물 각 연 1회 (1~3년차 3,000만 · 4~5년차 2,000만 · 6~10년차 1,000만원)</li></ul></div>
+    <div class="card"><h3>한 번 받는 보장</h3><ul>
+      <li><b>항암중입자방사선치료</b> 5,000만원 · 최초 1회 (계약 1년 이내 50%)</li></ul></div>
+  </div>
+  <p class="fine">초기집중과 항암중입자방사선치료는 암통합치료 연간 한도와 별도로 나옵니다. 중입자는 약관상 항암방사선치료에 해당해 암통합치료 방사선 금액과 초기집중 방사선 금액이 함께 나오는 것으로 보았습니다.</p>
+</section>
+
+<!-- 3-3 -->
+<section class="view pad" data-view="cover-3" hidden>
+  <div class="vh"><span class="k">3 · 주요질병의 보장내용 · ③</span><h1>뇌·심장 치료</h1>
+    <p>주요순환계질환통합치료 · 연 <b id="cvLimTxt">1억원</b> 한도. 여러 치료를 같은 해에 함께 받으면 각각 나오고, 통합치료는 연간 한도 안에서 지급됩니다.</p></div>
+  <div class="g2">
+    <div class="card tcard"><div class="hd"><h3>치료 예</h3><span class="src">계약 1년 경과</span></div>
+      <div id="cvCases" class="col" style="gap:30px"></div>
+      <div class="pwbox" id="cvPower" hidden>
+        <div class="t2"><span>파워수술 특약<span class="tg">별도 특약</span></span><b class="q" style="font-size:1.1rem;color:var(--muted)">수술 종에 따른 보험금</b></div>
+        <div class="how" style="font-size:.86rem;color:var(--muted)">받은 수술의 종(1~5종 수술분류표)에 따라 정해진 금액이 통합치료와 별도로 나옵니다.</div>
+      </div>
+      <div class="legend"><span><i class="s-cv"></i>주요 치료</span><span><i class="s-cv2"></i>중환자실 · 검사</span></div>
+    </div>
+    <div class="card"><div class="tblbox"><table id="cvTbl" aria-label="주요순환계질환통합치료 항목 금액"></table></div></div>
+  </div>
+  <p class="fine">순환계 특약에는 비급여 전용 칸이 없어 급여로 치료해도 금액이 같습니다. 스텐트 삽입술은 "수술(혈전 치료 제외)" 1회로 계산했습니다.</p>
+</section>
+
+<!-- 4 -->
+<section class="view pad basis" data-view="basis" hidden>
+  <div class="vh"><span class="k">4 · 근거·출처</span><h1>숫자는 이렇게 구했습니다</h1></div>
+  <details open><summary>암 확률 계산 방법</summary><ul>
+    <li>지금 나이부터 1년씩 나아가며 "아직 암이 없고 살아 있는 사람"이 그해 암에 걸릴 확률을 더합니다. 그 사이 다른 원인으로 사망하는 사람은 생명표 사망확률로 빼 줍니다.</li>
+    <li>연령별 암 발생률은 10세 단위 공식 수치를 각 나이에 맞게 이어 붙였고, 이미 암을 겪은 사람(유병자)을 분모에서 빼서 "암이 없는 사람" 기준으로 보정했습니다.</li>
+    <li>검증: 같은 방법으로 0세부터 평생을 계산하면 남자 44.3%, 여자 38.5%로, 공식 2023년 평생 암발생 위험도(남자 44.6%, 여자 38.2%)와 0.3%p 이내로 일치합니다.</li>
+    <li>5년·10년 생존율은 성별 평균입니다. 5년(2019–2023년 진단자)과 10년(2012–2016년 진단자)은 서로 다른 시기의 통계라, 차이에는 치료 성적이 좋아진 효과가 섞여 있습니다.</li></ul></details>
+  <details><summary>암 확률 원자료</summary>
+    <div class="tblbox" style="margin-top:12px"><table><thead><tr><th>연령군</th><th>남 발생률</th><th>여 발생률</th><th>남 유병률</th><th>여 유병률</th></tr></thead><tbody id="srcRows"></tbody></table></div>
+    <ul><li>단위: 인구 10만 명당. 발생률은 2023년, 유병률은 2024년 1월 1일 기준 (보건복지부·중앙암등록본부, 「2023년 국가암등록통계」 참고자료, 2026.1.20)</li>
+      <li>사망확률·기대여명: 국가데이터처 「2024년 생명표」 완전생명표(1세별), 2025.12.3 공표</li>
+      <li>생존율: 국가암정보센터 5년 상대생존율(2019–2023), 10년 상대생존율(2012–2016) 성별 표</li></ul></details>
+  <details><summary>보장 금액의 근거와 가정</summary><ul>
+    <li>가족대표건강보험 2607 약관: 암통합치료(종합병원이상)특약AC 별표1 연간 5천만원·8천만원·1억원 한도형, 주요순환계질환통합치료(종합병원이상)특약AC 별표1 같은 세 한도형, 초기집중보장형프리미엄클래스Ⅱ암주요치료보장(상급종합병원플러스)특약AC 가입금액 1,000만원 지급 예시, 항암중입자방사선치료특약AC 제2-2조</li>
+    <li>가정: 1·2종, 계약 1년 경과, 최초 암 진단 후 1~3년차, 상급종합병원 치료, 항목마다 보험연도 1회. 3종(간편고지)은 계약 1년 이내 통합치료·초기집중 금액이 50%이고, 항암중입자는 종과 관계없이 계약 1년 이내 50%입니다.</li>
+    <li>로봇수술은 초기집중에서 전액본인부담 암 수술로 인정되는 것으로, 특정면역항암제는 표적항암제에도 해당하는 것으로 보았습니다. 표적·특정면역항암은 식약처 허가 범위 또는 암질환심의위원회 승인 요법일 때 지급합니다.</li>
+    <li>초기집중은 상급종합병원·국립암센터·지역암센터·원자력병원, 암통합치료는 상급종합병원 혹은 종합병원에서 받은 치료가 대상입니다.</li></ul></details>
+  <details><summary>통계 출처</summary><ul>
+    <li>2023 국가암등록통계, 국립암센터 (암 5년 상대생존율, 암유병자)</li>
+    <li>질병관리청 2023 심뇌혈관질환 발생통계 (심근경색 발생, 30일 치명률, 뇌졸중 재발 비중)</li>
+    <li>건강보험심사평가원 2주기 암 적정성 평가 (상급종합병원 입원치료 비율)</li>
+    <li>국립암센터 건보 청구자료 분석(2012), NEJM(2017), 가천대 길병원(2017), 질병관리청 초발 뇌졸중 코호트(2022)</li></ul></details>
+  <p class="fine">본 자료는 공개된 국가통계와 학술연구를 요약한 것이며, 실제 보장 내용과 지급 조건은 약관 및 상품설명서를 따릅니다. 암 확률은 인구 전체의 통계 평균이며 개인의 실제 위험을 예측하지 않습니다. 2026년 10월 기준.</p>
+</section>
+</main>
+
+<footer class="ctl">
+  <div class="in pad">
+    <button class="nb" id="prev" type="button">← 이전</button>
+    <div class="pos" id="pos"></div>
+    <button class="fs" id="fs" type="button">전체 화면</button>
+    <button class="nb" id="next" type="button">다음 →</button>
+  </div>
+</footer>
+
+<script id="calc">
+const LT={
+ M:{ex:[80.8,80.0,79.0,78.1,77.1,76.1,75.1,74.1,73.1,72.1,71.1,70.1,69.1,68.1,67.1,66.1,65.1,64.2,63.2,62.2,61.2,60.2,59.3,58.3,57.3,56.3,55.4,54.4,53.4,52.5,51.5,50.5,49.6,48.6,47.6,46.7,45.7,44.7,43.8,42.8,41.9,40.9,40.0,39.0,38.1,37.2,36.2,35.3,34.4,33.5,32.5,31.6,30.7,29.8,28.9,28.1,27.2,26.3,25.4,24.6,23.7,22.9,22.0,21.2,20.4,19.5,18.7,17.9,17.1,16.3,15.5,14.8,14.0,13.3,12.6,11.8,11.1,10.5,9.8,9.1,8.5,7.9,7.4,6.9,6.4,5.9,5.5,5.1,4.7,4.3,4.0,3.7,3.4,3.2,2.9,2.7,2.5,2.3,2.2,2.0,1.9],
+    qx:[0.00261,0.00024,0.00018,0.00013,0.00010,0.00009,0.00008,0.00007,0.00006,0.00006,0.00008,0.00009,0.00012,0.00014,0.00016,0.00018,0.00022,0.00025,0.00028,0.00030,0.00032,0.00035,0.00038,0.00043,0.00047,0.00051,0.00055,0.00059,0.00062,0.00065,0.00068,0.00071,0.00074,0.00077,0.00079,0.00083,0.00089,0.00097,0.00106,0.00115,0.00123,0.00133,0.00143,0.00154,0.00167,0.00181,0.00196,0.00214,0.00236,0.00259,0.00284,0.00309,0.00335,0.00365,0.00400,0.00439,0.00477,0.00513,0.00553,0.00596,0.00645,0.00699,0.00759,0.00819,0.00878,0.00941,0.01020,0.01117,0.01229,0.01364,0.01523,0.01705,0.01910,0.02120,0.02360,0.02609,0.02895,0.03224,0.03632,0.04188,0.04870,0.05645,0.06476,0.07352,0.08355,0.09463,0.10678,0.12003,0.13441,0.14993,0.16661,0.18444,0.20340,0.22346,0.24455,0.26662,0.28957,0.31330,0.33768,0.36256,1.0],
+    inc:[16.1,18.2,51.2,143.4,243.0,518.5,1258.9,2367.7,2930.2],
+    prev:[96.1,200.6,371.9,888.8,1890.4,3839.8,9399.7,19455.8,26617.1],
+    s5:68.2,s10:59.2},
+ F:{ex:[86.6,85.8,84.8,83.8,82.8,81.8,80.8,79.8,78.8,77.8,76.8,75.8,74.8,73.9,72.9,71.9,70.9,69.9,68.9,67.9,66.9,66.0,65.0,64.0,63.0,62.0,61.1,60.1,59.1,58.1,57.1,56.2,55.2,54.2,53.2,52.3,51.3,50.3,49.3,48.4,47.4,46.4,45.5,44.5,43.6,42.6,41.6,40.7,39.7,38.8,37.8,36.9,35.9,35.0,34.0,33.1,32.1,31.2,30.3,29.3,28.4,27.5,26.5,25.6,24.7,23.7,22.8,21.9,21.0,20.1,19.2,18.3,17.4,16.6,15.7,14.9,14.0,13.2,12.4,11.6,10.9,10.2,9.5,8.8,8.2,7.6,7.0,6.5,6.0,5.5,5.1,4.7,4.3,4.0,3.7,3.4,3.1,2.9,2.7,2.5,2.3],
+    qx:[0.00214,0.00024,0.00016,0.00010,0.00008,0.00008,0.00008,0.00008,0.00006,0.00005,0.00005,0.00006,0.00008,0.00011,0.00014,0.00016,0.00019,0.00022,0.00025,0.00026,0.00027,0.00028,0.00030,0.00031,0.00031,0.00031,0.00033,0.00035,0.00038,0.00040,0.00041,0.00041,0.00042,0.00043,0.00045,0.00048,0.00052,0.00058,0.00064,0.00072,0.00078,0.00083,0.00086,0.00088,0.00090,0.00094,0.00102,0.00111,0.00120,0.00128,0.00136,0.00146,0.00155,0.00162,0.00168,0.00174,0.00183,0.00194,0.00207,0.00218,0.00230,0.00247,0.00270,0.00299,0.00328,0.00355,0.00386,0.00423,0.00471,0.00531,0.00599,0.00678,0.00770,0.00876,0.01008,0.01156,0.01335,0.01547,0.01812,0.02152,0.02558,0.03030,0.03585,0.04217,0.04959,0.05787,0.06720,0.07764,0.08924,0.10206,0.11613,0.13147,0.14809,0.16596,0.18505,0.20529,0.22660,0.24885,0.27190,0.29559,1.0],
+    inc:[12.9,19.9,117.8,321.2,590.0,673.7,791.6,1029.7,1304.5],
+    prev:[80.6,185.2,597.5,2065.4,5155.1,8502.3,11297.4,12851.3,12413.7],
+    s5:79.4,s10:75.1}
+};
+const MIDS=[5,15,25,35,45,55,65,75,85];
+function rateAt(d,x){
+  const xm=x+0.5; let k,t;
+  if(xm<=MIDS[0]){k=0;t=0}else if(xm>=MIDS[8]){k=7;t=1}else{k=Math.floor((xm-5)/10);t=(xm-MIDS[k])/10}
+  const lerp=(a)=>Math.exp(Math.log(a[k])*(1-t)+Math.log(a[k+1])*t)/1e5;
+  return {i:lerp(d.inc),p:lerp(d.prev)};
+}
+function cancerRisk(sex,age,horizon){
+  const d=LT[sex]; let free=1,cum=0,t=0,x=age; const path=[[age,0]];
+  while(t<horizon-1e-9){
+    const dt=Math.min(1,horizon-t), xi=Math.min(x,100), r=rateAt(d,xi);
+    const hc=r.i/(1-r.p), hd= xi<100 ? -Math.log(1-d.qx[xi]) : 1/d.ex[100], h=hc+hd;
+    cum+=free*(hc/h)*(1-Math.exp(-h*dt)); free*=Math.exp(-h*dt); t+=dt; x+=1;
+    path.push([age+t,cum]);
+    if(free<1e-9)break;
+  }
+  return {p:cum,path};
+}
+</script>
+
+<script id="cover-data">
+// 가족대표건강보험 2607 약관 별표1 (단위: 만원, 1·2종, 계약 1년 초과)
+const CAN={
+  5000:{surg:500,robot:500,robotSp:100,rad:500,imrt:500,proton:1000,chemo:500,target:1000,immune:1000,hormone:30},
+  8000:{surg:750,robot:750,robotSp:150,rad:750,imrt:750,proton:2000,chemo:750,target:2000,immune:2000,hormone:50},
+  10000:{surg:1000,robot:1000,robotSp:200,rad:1000,imrt:1000,proton:3000,chemo:1000,target:3000,immune:3000,hormone:100}
+};
+const CIRC={
+  5000:{surgery:1000,thrombectomy:1500,thrombolysis:1500,icu:800,ecmo:2000,crrt:500,vent:200,hypo:100,ct:10,mri:5,pet:5,rehab:2},
+  8000:{surgery:2500,thrombectomy:2000,thrombolysis:2000,icu:1000,ecmo:2000,crrt:500,vent:200,hypo:100,ct:10,mri:5,pet:5,rehab:2},
+  10000:{surgery:2500,thrombectomy:3000,thrombolysis:3000,icu:1000,ecmo:2000,crrt:500,vent:200,hypo:100,ct:10,mri:5,pet:5,rehab:2}
+};
+const PREM=3000, HEAVY=5000;
+function cancerCases(L){
+  const a=CAN[L];
+  return [
+    {title:'암 수술',cases:[
+      {name:'일반 암 수술',k:'급여',parts:[[a.surg,'base','암통합 수술']]},
+      {name:'로봇수술',k:'로봇',parts:[[a.surg,'base','암통합 수술'],[a.robot,'add','로봇수술'],[PREM,'prem','초기집중 수술']]}]},
+    {title:'항암방사선',cases:[
+      {name:'일반 방사선',k:'급여',parts:[[a.rad,'base','암통합 방사선']]},
+      {name:'세기조절',k:'급여',parts:[[a.rad,'base','암통합 방사선'],[a.imrt,'add','세기조절']]},
+      {name:'양성자',k:'비급여',parts:[[a.rad,'base','암통합 방사선'],[a.proton,'add','양성자'],[PREM,'prem','초기집중 방사선']]}]},
+    {title:'항암약물',cases:[
+      {name:'일반 항암',k:'급여',parts:[[a.chemo,'base','암통합 약물']]},
+      {name:'표적항암',k:'비급여',parts:[[a.chemo,'base','암통합 약물'],[a.target,'add','표적'],[PREM,'prem','초기집중 약물']]},
+      {name:'면역항암',k:'비급여',parts:[[a.chemo,'base','암통합 약물'],[a.target,'add','표적'],[a.immune,'add','특정면역'],[PREM,'prem','초기집중 약물']]}]}
+  ];
+}
+function comboCase(L){
+  const a=CAN[L];
+  const share=[[a.surg,'암 수술'],[a.robot,'로봇수술'],[a.rad,'항암방사선(중입자)'],[a.chemo,'항암약물'],[a.target,'표적항암'],[a.immune,'특정면역항암']];
+  const shareSum=share.reduce((s,x)=>s+x[0],0), paid=Math.min(shareSum,L);
+  const prem=[[PREM,'수술'],[PREM,'방사선'],[PREM,'약물']];
+  return {share,shareSum,paid,cut:shareSum-paid,prem,premSum:PREM*3,heavy:HEAVY,total:paid+PREM*3+HEAVY};
+}
+function circCases(V){
+  const c=CIRC[V];
+  return [
+    {name:'뇌경색',parts:[[c.thrombolysis,'cv','혈전용해'],[c.thrombectomy,'cv','카테터 혈전제거'],[c.icu,'cv2','중환자실'],[c.ct+c.mri,'cv2','CT·MRI']]},
+    {name:'급성심근경색',parts:[[c.thrombectomy,'cv','카테터 혈전제거'],[c.surgery,'cv','스텐트(수술)'],[c.icu,'cv2','중환자실'],[c.ct,'cv2','CT']]}
+  ];
+}
+function won(m){
+  if(m>=10000){const e=Math.floor(m/10000),r=m%10000;return r?`${e}억 ${r.toLocaleString()}만원`:`${e}억원`}
+  return `${m.toLocaleString()}만원`;
+}
+</script>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+
+  /* ---------- 화면 목록과 이동 ---------- */
+  const SECS=['암이 얼마나 가까이에 있나','웬만하면 다 치료한다','주요질병의 보장내용','근거·출처'];
+  const VIEWS=[
+    {id:'risk',s:0,l:'암이 얼마나 가까이에 있나'},
+    {id:'trend-1',s:1,l:'① 생존 증가'},{id:'trend-2',s:1,l:'② 상급종합병원'},{id:'trend-3',s:1,l:'③ 초기 집중과 재발'},
+    {id:'cover-1',s:2,l:'① 치료별 보장'},{id:'cover-2',s:2,l:'② 복합 치료 사례'},{id:'cover-3',s:2,l:'③ 뇌·심장'},
+    {id:'basis',s:3,l:'근거·출처'}];
+  let cur=0;
+  $('tabs').innerHTML=SECS.map((n,i)=>`<a href="#${VIEWS.find(v=>v.s===i).id}" data-s="${i}"><span class="n">${i+1}</span>${n}</a>`).join('');
+  function show(id){
+    let i=VIEWS.findIndex(v=>v.id===id); if(i<0)i=0; cur=i;
+    const v=VIEWS[i];
+    document.querySelectorAll('.view').forEach(el=>el.hidden=el.dataset.view!==v.id);
+    document.querySelectorAll('#tabs a').forEach(a=>a.classList.toggle('on',+a.dataset.s===v.s));
+    const sib=VIEWS.filter(x=>x.s===v.s);
+    $('subtabs').innerHTML=sib.length>1?sib.map(x=>`<a href="#${x.id}" class="${x.id===v.id?'on':''}">${x.l}</a>`).join(''):`<span style="color:var(--muted);font-weight:600">${SECS[v.s]}</span>`;
+    $('limits').hidden=v.s!==2;
+    $('prev').disabled=i===0; $('next').disabled=i===VIEWS.length-1;
+    $('pos').innerHTML=`<b>${i+1}</b> / ${VIEWS.length} · ${SECS[v.s]}${sib.length>1?' · '+v.l:''}`;
+    $('stage').scrollTop=0;
+  }
+  function go(d){const i=Math.max(0,Math.min(VIEWS.length-1,cur+d)); if(i!==cur) location.hash=VIEWS[i].id}
+  window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+  $('prev').addEventListener('click',()=>go(-1));
+  $('next').addEventListener('click',()=>go(1));
+  document.addEventListener('keydown',e=>{
+    if(e.target.closest('input,select,textarea'))return;
+    if(['ArrowRight','PageDown'].includes(e.key)){e.preventDefault();go(1)}
+    else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(-1)}
+  });
+  let tx=0,ty=0,ok=false;
+  $('stage').addEventListener('touchstart',e=>{const t=e.touches[0];tx=t.clientX;ty=t.clientY;ok=!e.target.closest('input,.svgbox,.tblbox')},{passive:true});
+  $('stage').addEventListener('touchend',e=>{if(!ok)return;const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;if(Math.abs(dx)>70&&Math.abs(dy)<50)go(dx<0?1:-1)},{passive:true});
+  $('fs').addEventListener('click',()=>{
+    const d=document;
+    if(!d.fullscreenElement){(d.documentElement.requestFullscreen||function(){}).call(d.documentElement)?.catch?.(()=>{})}
+    else d.exitFullscreen?.();
+  });
+  document.addEventListener('fullscreenchange',()=>{$('fs').textContent=document.fullscreenElement?'전체 화면 끝내기':'전체 화면'});
+
+  /* ---------- 섹션 1 ---------- */
+  let sex='M', age=55;
+  const dots=$('dots');
+  for(let i=0;i<100;i++)dots.appendChild(document.createElement('i'));
+  const fmt=(v,n=1)=>v.toFixed(n);
+  const groups=['0–9','10–19','20–29','30–39','40–49','50–59','60–69','70–79','80+'];
+  $('srcRows').innerHTML=groups.map((g,i)=>`<tr><td>${g}세</td><td>${LT.M.inc[i].toLocaleString()}</td><td>${LT.F.inc[i].toLocaleString()}</td><td>${LT.M.prev[i].toLocaleString()}</td><td>${LT.F.prev[i].toLocaleString()}</td></tr>`).join('');
+  function render(){
+    const d=LT[sex], ex=d.ex[Math.min(age,100)], endAge=age+ex;
+    const win=cancerRisk(sex,age,ex), life=cancerRisk(sex,age,150);
+    const pct=win.p*100, n=Math.round(pct);
+    $('riskVal').textContent=fmt(pct);
+    $('heroSub').innerHTML=`${age}세 ${sex==='M'?'남자':'여자'}가 기대여명인 <b>${fmt(endAge)}세까지</b> 사는 동안, 100명 중 약 <b>${n}명</b>이 한 번 이상 암 진단을 받습니다.`;
+    $('lifeLine').textContent=`점선은 기대여명이 끝나는 나이입니다. 그보다 오래 사는 경우까지 포함한 남은 평생 기준은 ${fmt(life.p*100)}%입니다.`;
+    [...dots.children].forEach((el,i)=>el.classList.toggle('on',i<n));
+    $('exVal').textContent=fmt(ex)+'년';
+    $('exNote').textContent=`약 ${fmt(endAge)}세까지 · 2024년 생명표`;
+    $('s5').textContent=fmt(d.s5)+'%';
+    $('s10').textContent=fmt(d.s10)+'%';
+    drawChart(life.path,endAge,win.p);
+  }
+  function drawChart(path,endAge,pWin){
+    const W=720,H=330,L=56,R=20,T=18,B=40;
+    const x0=path[0][0], x1=Math.max(x0+5,Math.min(100,path[path.length-1][0]));
+    const pts=path.filter(p=>p[0]<=x1+1e-9);
+    const ymax=Math.max(10,Math.ceil(Math.max(...pts.map(p=>p[1]))*10)*10);
+    const sx=v=>L+(v-x0)/(x1-x0)*(W-L-R), sy=v=>T+(1-v/ymax)*(H-T-B);
+    let g='';
+    for(let y=0;y<=ymax;y+=10)g+=`<line x1="${L}" x2="${W-R}" y1="${sy(y)}" y2="${sy(y)}" stroke="var(--line)"/><text x="${L-8}" y="${sy(y)+4}" text-anchor="end">${y}%</text>`;
+    const step=(x1-x0)>40?10:5;
+    for(let a=Math.ceil(x0/step)*step;a<=x1;a+=step)g+=`<text x="${sx(a)}" y="${H-B+20}" text-anchor="middle">${a}세</text>`;
+    const line=pts.map((p,i)=>(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]*100).toFixed(1)).join(' ');
+    const wp=pts.filter(p=>p[0]<=endAge+1e-9);
+    const area='M'+sx(x0)+' '+sy(0)+' '+wp.map(p=>'L'+sx(p[0]).toFixed(1)+' '+sy(p[1]*100).toFixed(1)).join(' ')+` L${sx(endAge).toFixed(1)} ${sy(pWin*100).toFixed(1)} L${sx(endAge).toFixed(1)} ${sy(0)} Z`;
+    g+=`<path d="${area}" fill="var(--risk-soft)"/><path d="${line}" fill="none" stroke="var(--risk)" stroke-width="3" stroke-linejoin="round"/>`;
+    if(endAge<=x1){
+      const ex=sx(endAge),ey=sy(pWin*100),anc=ex>W-150?'end':'start',dx=anc==='end'?-12:12;
+      g+=`<line x1="${ex}" x2="${ex}" y1="${T}" y2="${H-B}" stroke="var(--muted)" stroke-dasharray="5 5"/><circle cx="${ex}" cy="${ey}" r="6" fill="var(--risk)" stroke="#fff" stroke-width="2"/><text x="${ex+dx}" y="${Math.max(T+14,ey-12)}" text-anchor="${anc}" style="fill:var(--ink);font-size:16px;font-weight:500">${endAge.toFixed(1)}세 · ${(pWin*100).toFixed(1)}%</text>`;
+    }
+    $('svg').innerHTML=g;
+  }
+  function setSex(s){sex=s;$('sexM').setAttribute('aria-pressed',s==='M');$('sexF').setAttribute('aria-pressed',s==='F');render()}
+  function setAge(v){v=Math.max(0,Math.min(99,Math.round(+v||0)));age=v;$('ageNum').value=v;$('ageRange').value=v;render()}
+  $('sexM').addEventListener('click',()=>setSex('M'));
+  $('sexF').addEventListener('click',()=>setSex('F'));
+  $('ageRange').addEventListener('input',e=>setAge(e.target.value));
+  $('ageNum').addEventListener('change',e=>setAge(e.target.value));
+  $('ageNum').addEventListener('input',e=>{if(e.target.value!=='')setAge(e.target.value)});
+  render();
+
+  /* ---------- 섹션 3 ---------- */
+  let CL=10000, VL=10000, DIAG=0, POWER=false;
+  const cls={base:'s-base',add:'s-add',prem:'s-prem',sep:'s-sep',cv:'s-cv',cv2:'s-cv2',diag:'s-diag',pw:'s-pw'};
+  const tag=k=>k==='비급여'?'<span class="tg n">비급여</span>':k==='로봇'?'<span class="tg">로봇 사용료 비급여</span>':'<span class="tg">급여</span>';
+  const stack=(parts,scale)=>parts.map(([v,t,n])=>`<i class="${cls[t]}" style="width:${Math.min(100,v/scale*100).toFixed(2)}%" title="${n} ${won(v)}"></i>`).join('');
+  const how=parts=>parts.map(([v,,n])=>`${n} ${v.toLocaleString()}`).join(' + ');
+  const sum=parts=>parts.reduce((s,p)=>s+p[0],0);
+  const PW_CASE=`<div class="case"><div class="t2"><span>파워수술<span class="tg">별도 특약</span></span><b class="q">수술 종에 따른 보험금</b></div><div class="stack dash"></div><div class="how">1~5종 수술분류표의 종에 따라 정해진 금액</div></div>`;
+  function renderCover(){
+    const a=CAN[CL];
+    $('robotSp').textContent=`${a.robotSp.toLocaleString()}만원`;
+    document.querySelectorAll('.pwL').forEach(e=>e.hidden=!POWER);
+    $('dLegend').hidden=!DIAG; document.querySelectorAll('.dL').forEach(e=>e.hidden=!DIAG);
+    $('cvPower').hidden=!POWER;
+    /* 항목 금액표 */
+    const rows=[['암 수술','surg'],['로봇수술 (갑상선·전립선암 제외)','robot'],['항암방사선','rad'],['세기조절방사선','imrt'],['양성자방사선 · 비급여','proton'],['항암약물 (호르몬 제외)','chemo'],['표적항암 · 비급여','target'],['특정면역항암 · 비급여','immune']];
+    const Ls=[5000,8000,10000];
+    $('itemTbl').innerHTML=`<thead><tr><th>치료 항목 (1회)</th>${Ls.map(l=>`<th class="${l===CL?'sel':''}">${won(l).replace('원','')} 한도형</th>`).join('')}</tr></thead><tbody>`+
+      rows.map(([n,k])=>`<tr><td>${n}</td>${Ls.map(l=>`<td class="${l===CL?'sel':''}">${CAN[l][k].toLocaleString()}만원</td>`).join('')}</tr>`).join('')+
+      `<tr><td>연간 한도</td>${Ls.map(l=>`<td class="${l===CL?'sel':''}">${won(l)}</td>`).join('')}</tr></tbody>`;
+    /* 치료별 보장: 암 진단금 상자는 암 수술 상자 위에, 진단금이 있을 때만 */
+    const diagBox=DIAG?`<div class="card tcard"><div class="hd"><h3>암 진단금</h3><span class="src">최초 1회</span></div>
+      <div class="case"><div class="t2"><span>암 진단 확정 시</span><b>${won(DIAG)}</b></div><div class="stack">${stack([[DIAG,'diag','암 진단금']],10000)}</div></div></div>`:'';
+    $('tcards').innerHTML=cancerCases(CL).map((g,gi)=>{
+      const card=`<div class="card tcard"><div class="hd"><h3>${g.title}</h3><span class="src">치료 1회</span></div>
+      ${g.cases.map(c=>`<div class="case"><div class="t2"><span>${c.name}${tag(c.k)}</span><b>${won(sum(c.parts))}</b></div>
+        <div class="stack">${stack(c.parts,10000)}</div><div class="how">${how(c.parts)}</div></div>`).join('')}${gi===0&&POWER?PW_CASE:''}</div>`;
+      return gi===0?`<div class="col" style="gap:24px">${diagBox}${card}</div>`:card;
+    }).join('');
+    /* 복합 치료 사례 */
+    const r=comboCase(CL), total=r.total+DIAG, plus=POWER?'<span class="plus">+ 수술특약 금액</span>':'';
+    $('cbTotal').innerHTML=won(total)+plus;
+    const subs=[];
+    if(DIAG)subs.push(`암 진단금 ${won(DIAG)}`);
+    subs.push(`암통합치료 ${won(r.paid)}`,`초기집중 ${won(r.premSum)}`,`중입자 ${won(r.heavy)}`);
+    if(POWER)subs.push('파워수술(수술 종에 따라)');
+    $('cbSub').textContent=subs.join(' + ');
+    const segs=[]; if(DIAG)segs.push([DIAG,'diag','암 진단금']);
+    segs.push([r.paid,'base','암통합치료'],[r.premSum,'prem','초기집중'],[r.heavy,'sep','항암중입자']);
+    const scale=(24000+DIAG)/(POWER?0.9:1);
+    $('cbStack').innerHTML=stack(segs,scale)+(POWER?`<i class="s-pw" style="width:10%" title="파워수술 · 수술 종에 따라"></i>`:'');
+    $('mtFill').style.width=Math.min(100,r.shareSum/CL*100).toFixed(1)+'%';
+    $('mtTxt').textContent=`${won(r.shareSum)} / ${won(CL)} (${Math.round(r.shareSum/CL*100)}%)`+(r.cut?` · ${won(r.cut)} 한도 초과로 빠짐`:'');
+    const box=(h,amt,rows,note,extra='')=>`<div class="card brk ${extra}"><span class="h">${h}</span><span class="h r">${amt}</span>${rows}${note?`<span class="src" style="grid-column:1/-1;margin-top:6px">${note}</span>`:''}</div>`;
+    const dBox=DIAG?box('암 진단금',won(DIAG),`<span>최초 1회</span><span class="r">${DIAG.toLocaleString()}만원</span>`,'진단 확정 시'):'';
+    const cBox=box('암통합치료',won(r.paid),r.share.map(([v,n])=>`<span>${n}</span><span class="r">${v.toLocaleString()}만원</span>`).join(''),`연 ${won(CL)} 한도 안`);
+    const pBox=box('초기집중 프리미엄클래스Ⅱ',won(r.premSum),r.prem.map(([v,n])=>`<span>${n} · 1~3년차</span><span class="r">${v.toLocaleString()}만원</span>`).join(''),'한도와 별도');
+    const hBox=box('항암중입자방사선치료',won(r.heavy),`<span>최초 1회</span><span class="r">5,000만원</span>`,'별도 특약');
+    const wBox=POWER?box('파워수술','<span class="q">수술 종에 따라</span>',`<span style="grid-column:1/-1">수술 종에 따라 수술보험금 추가</span>`,'별도 특약 · 1~5종 수술분류표','pw'):'';
+    $('cbBrk').innerHTML=`<div class="col" style="gap:24px">${dBox}${cBox}</div><div class="col" style="gap:24px">${pBox}</div><div class="col" style="gap:24px">${hBox}${wBox}</div>`;
+    $('cbSum').innerHTML=`<span style="font-weight:700;font-size:1.1rem">합계</span><b>${won(total)}${plus}</b>`;
+    /* 뇌·심장 */
+    const c=CIRC[VL];
+    $('cvLimTxt').textContent=won(VL);
+    const cr=[['혈전제거술','thrombectomy','연 1회'],['혈전용해치료','thrombolysis','연 1회'],['수술 (혈전 치료 제외)','surgery','수술 1회당'],['중환자실 치료','icu','연 1회'],['부분체외순환 (ECMO)','ecmo','연 1회'],['지속적신대체요법 (CRRT)','crrt','연 1회'],['인공호흡기 (12시간 초과)','vent','연 1회'],['저체온요법','hypo','연 1회']];
+    $('cvTbl').innerHTML=`<thead><tr><th>치료 항목</th><th>지급</th><th>금액</th></tr></thead><tbody>`+
+      cr.map(([n,k,w])=>`<tr><td>${n}</td><td style="color:var(--muted)">${w}</td><td><b>${c[k].toLocaleString()}만원</b></td></tr>`).join('')+
+      `<tr><td>검사</td><td style="color:var(--muted)">연 1회씩</td><td>CT ${c.ct} · MRI ${c.mri} · PET ${c.pet}만원</td></tr><tr><td>재활치료</td><td style="color:var(--muted)">1일 · 연 15회</td><td>${c.rehab}만원</td></tr></tbody>`;
+    $('cvCases').innerHTML=circCases(VL).map(cs=>`<div class="case"><div class="t2"><span style="font-size:1.1rem">${cs.name}</span><b>${won(sum(cs.parts))}</b></div>
+      <div class="stack" style="height:28px">${stack(cs.parts,8000)}</div><div class="how">${how(cs.parts)}</div></div>`).join('');
+    document.querySelectorAll('[data-c]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.c===CL));
+    document.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===VL));
+    document.querySelectorAll('[data-p]').forEach(b=>b.setAttribute('aria-pressed',(b.dataset.p==='1')===POWER));
+  }
+  document.querySelectorAll('[data-c]').forEach(b=>b.addEventListener('click',()=>{CL=+b.dataset.c;renderCover()}));
+  document.querySelectorAll('[data-v]').forEach(b=>b.addEventListener('click',()=>{VL=+b.dataset.v;renderCover()}));
+  document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{POWER=b.dataset.p==='1';renderCover()}));
+  $('diagIn').addEventListener('input',e=>{const v=Math.max(0,Math.round(+e.target.value||0));DIAG=v;renderCover()});
+  renderCover();
+
+  show(location.hash.slice(1)||'risk');
+})();
+</script>
+</body>
+</html>
