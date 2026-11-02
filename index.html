@@ -173,6 +173,38 @@ details.more summary::-webkit-details-marker{display:none}
 details.more summary::before{content:"+";font-family:var(--mono);font-size:1.1rem}
 details.more[open] summary::before{content:"−"}
 details.more .body{margin-top:12px}
+/* 접어 두는 카드: 필요할 때 펼침 */
+details.fold{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+details.fold>summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 12px;padding:18px 28px;font-weight:700;font-size:1.08rem}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary::before{content:"+";font-family:var(--mono);color:var(--accent);font-size:1.2rem;width:1em}
+details.fold[open]>summary::before{content:"−"}
+details.fold>summary .sm{color:var(--muted);font-weight:500;font-size:.92rem}
+details.fold>.body{padding:4px 28px 28px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 40px;align-items:center}
+details.fold>.body>.src{grid-column:1/-1}
+/* 성별 상대생존율 막대 */
+.sv{display:flex;flex-direction:column;gap:20px}
+.sv .grp{display:grid;grid-template-columns:5.6em minmax(0,1fr);gap:6px 14px;align-items:center}
+.sv .grp>b{grid-row:span 2;font-weight:600}
+.sv .grp.all>b{color:var(--accent)}
+.sv .ln{display:grid;grid-template-columns:minmax(0,1fr) 3.8em;gap:12px;align-items:center}
+.sv .tr{height:16px;background:var(--soft);border-radius:3px;overflow:hidden}
+.sv .fl{height:100%;background:var(--c1)}
+.sv .fl.t10{background:var(--c2)}
+.sv .v{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.s5{background:var(--c1)} .s10{background:var(--c2)}
+/* 암 치료 건수 구성 · 입원과 외래 */
+.mix{display:flex;gap:3px;height:104px}
+.mix>div{min-width:0;padding:0 16px;display:flex;flex-direction:column;justify-content:center;line-height:1.35;overflow:hidden}
+.mix>div:first-child{border-radius:4px 0 0 4px}
+.mix>div:last-child{border-radius:0 4px 4px 0}
+.mix b{font-family:var(--display);font-size:1.6rem;line-height:1.15}
+.mix .m1{background:var(--risk)} .mix .m2{background:var(--c2);color:var(--ink)} .mix .m3{background:var(--c1);color:#fff}
+.share{display:flex;gap:3px;height:34px}
+.share>div:first-child{background:var(--c2);border-radius:4px 0 0 4px}
+.share>div:last-child{background:var(--risk);border-radius:0 4px 4px 0}
+.big2{font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.2;font-variant-numeric:tabular-nums}
+.big3{font-size:clamp(2.6rem,4.4vw,3.6rem);color:var(--accent)}
 .tblbox{overflow-x:auto}
 table{border-collapse:collapse;font-variant-numeric:tabular-nums;width:100%}
 th,td{border-bottom:1px solid var(--line);padding:10px 14px;text-align:right;white-space:nowrap}
@@ -219,7 +251,12 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
 
 @media (max-width:860px){
   body{font-size:16px}
-  .g2,.g3,.calc,.combo-top,.brkw,.g2.cv{grid-template-columns:minmax(0,1fr)}
+  .g2,.g3,.calc,.combo-top,.brkw,.g2.cv,details.fold>.body{grid-template-columns:minmax(0,1fr)}
+  details.fold>summary{padding:16px 20px}
+  details.fold>.body{padding:4px 20px 22px}
+  .mix{height:96px}
+  .mix>div{padding:0 7px;font-size:.82rem}
+  .mix b{font-size:1.2rem}
   .card{padding:20px}
   .pad{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
   nav.tabs{margin-left:0;width:100%}
@@ -317,24 +354,27 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
       <p class="p">암유병자 273만 명 중 62.1%가 진단 후 5년 넘게 생존 중입니다.</p>
       <p class="src">출처: 2023 국가암등록통계, 국립암센터</p>
     </div>
-    <div class="card col" style="gap:22px">
+    <div class="card col" style="gap:18px">
+      <h3>성별로 본 암 상대생존율</h3>
+      <div class="legend"><span><i class="s5"></i>5년 · 2019–2023년 진단</span><span><i class="s10"></i>10년 · 2012–2016년 진단</span></div>
+      <div class="sv" role="img" aria-label="암 상대생존율 5년·10년: 남녀 전체 73.7%·67.2%, 남자 68.2%·59.2%, 여자 79.4%·75.1%">
+        <div class="grp all"><b>남녀 전체</b><div class="ln"><div class="tr"><div class="fl" style="width:73.7%"></div></div><span class="v">73.7%</span></div><div class="ln"><div class="tr"><div class="fl t10" style="width:67.2%"></div></div><span class="v">67.2%</span></div></div>
+        <div class="grp"><b>남자</b><div class="ln"><div class="tr"><div class="fl" style="width:68.2%"></div></div><span class="v">68.2%</span></div><div class="ln"><div class="tr"><div class="fl t10" style="width:59.2%"></div></div><span class="v">59.2%</span></div></div>
+        <div class="grp"><b>여자</b><div class="ln"><div class="tr"><div class="fl" style="width:79.4%"></div></div><span class="v">79.4%</span></div><div class="ln"><div class="tr"><div class="fl t10" style="width:75.1%"></div></div><span class="v">75.1%</span></div></div>
+      </div>
+      <p class="src">10년 생존율은 2012–2016년 진단자 통계라 최근 치료 성적보다 낮게 나옵니다. 남자가 낮은 것은 생존율이 높은 갑상선암·유방암이 여자에게 많이 생기기 때문으로 분석됩니다. 출처: 2023 국가암등록통계, 국가암정보센터 10년 상대생존율</p>
+    </div>
+  </div>
+  <details class="fold"><summary>심근경색 · 뇌졸중<span class="sm">발생 건수와 발생 후 30일 치명률</span></summary>
+    <div class="body">
       <div class="kpi"><span class="num cv">1.55배</span><span class="lb">심근경색 발생 건수<br>2011년 → 2023년</span></div>
       <div>
         <div class="src" style="margin-bottom:4px">발생 후 30일 치명률 (2011년 → 2023년)</div>
         <div class="rows"><div><span>심근경색</span><span>9.7% → <b>8.9%</b></span></div><div><span>뇌졸중</span><span>8.5% → <b>7.5%</b></span></div></div>
       </div>
-      <p class="src" style="margin-top:auto">출처: 질병관리청 2023 심뇌혈관질환 발생통계</p>
+      <p class="src">출처: 질병관리청 2023 심뇌혈관질환 발생통계</p>
     </div>
-  </div>
-  <div class="card col" style="gap:14px">
-    <h3>성별로 본 암 상대생존율</h3>
-    <div class="tblbox"><table class="surv" aria-label="성별 5년·10년 상대생존율">
-      <thead><tr><th></th><th>5년 · 2019–2023년 진단</th><th>10년 · 2012–2016년 진단</th></tr></thead>
-      <tbody><tr><td>남녀 전체</td><td><b>73.7%</b></td><td><b>67.2%</b></td></tr>
-        <tr><td>남자</td><td>68.2%</td><td>59.2%</td></tr>
-        <tr><td>여자</td><td>79.4%</td><td>75.1%</td></tr></tbody></table></div>
-    <p class="src">10년 생존율은 2012–2016년 진단자 통계라 최근 치료 성적보다 낮게 나옵니다. 남자가 낮은 것은 생존율이 높은 갑상선암·유방암이 여자에게 많이 생기기 때문으로 분석됩니다. 출처: 2023 국가암등록통계, 국가암정보센터 10년 상대생존율</p>
-  </div>
+  </details>
   <div class="dir"><b>설계 방향</b><span>진단금 한 번으로 끝내지 않고, 치료받을 때마다 다시 받는 보장을 중심에 둡니다.</span></div>
 </section>
 
@@ -357,8 +397,8 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
 <!-- 2-3 -->
 <section class="view pad" data-view="trend-3" hidden>
   <div class="vh"><span class="k">2 · 웬만하면 다 치료한다 · ③</span><h1>초기 집중, 그리고 재발 보호</h1><p>위험은 첫해에 몰리고, 재발은 오래 남습니다</p></div>
-  <div class="g2">
-    <div class="card col" style="gap:18px">
+  <div class="card g2" style="gap:24px 48px">
+    <div class="col" style="gap:18px">
       <h3>암 치료비는 첫해에 몰립니다</h3>
       <span class="src">진단 1년차 진료비 (4년차 = 1)</span>
       <div class="bars">
@@ -366,15 +406,18 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
         <div class="hbar"><span>대장암</span><div class="tr"><div class="fl" style="width:69.2%"></div></div><span class="v">8.3배</span></div>
         <div class="hbar"><span>유방암</span><div class="tr"><div class="fl" style="width:39.1%"></div></div><span class="v">4.7배</span></div>
       </div>
-      <h3 style="margin-top:8px">그래도 재발은 10년을 넘기도 합니다</h3>
+    </div>
+    <div class="col" style="gap:16px">
+      <h3>그래도 재발은 10년을 넘기도 합니다</h3>
       <p class="p">호르몬 양성 유방암은 5년 호르몬치료 뒤에도 20년차까지 재발이 꾸준합니다(원격재발 위험 10~41%).</p>
       <p class="p">재발한 갑상선암 환자의 6.7%는 수술 10년 이후에 재발했습니다.</p>
-      <p class="src">출처: 국립암센터 건보 청구자료 분석(2012), NEJM(2017), 가천대 길병원(2017)</p>
     </div>
-    <div class="card col" style="gap:18px">
-      <h3>뇌졸중 재발은 첫해에 몰립니다</h3>
-      <span class="src">초발 뇌졸중 누적 재발률</span>
-      <div class="cols5" aria-label="1년 8.9%, 2년 10.9%, 3년 12.7%, 4년 14.3%, 5년 15.5%">
+    <p class="src" style="grid-column:1/-1">출처: 국립암센터 건보 청구자료 분석(2012), NEJM(2017), 가천대 길병원(2017)</p>
+  </div>
+  <details class="fold"><summary>뇌졸중 재발은 첫해에 몰립니다<span class="sm">초발 뇌졸중 누적 재발률</span></summary>
+    <div class="body">
+      <div class="col" style="gap:8px">
+        <div class="cols5" aria-label="1년 8.9%, 2년 10.9%, 3년 12.7%, 4년 14.3%, 5년 15.5%">
         <div><span>8.9%</span><i style="height:100px"></i></div>
         <div><span>10.9%</span><i style="height:122px"></i></div>
         <div><span>12.7%</span><i style="height:142px"></i></div>
@@ -382,12 +425,53 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
         <div><span>15.5%</span><i style="height:174px"></i></div>
       </div>
       <div class="cap5"><span>1년</span><span>2년</span><span>3년</span><span>4년</span><span>5년</span></div>
-      <p class="p">5년 동안의 재발(15.5%) 가운데 절반 넘게가 첫해(8.9%)에 일어났습니다.</p>
+      </div>
+      <div class="col" style="gap:14px">
+        <p class="p">5년 동안의 재발(15.5%) 가운데 절반 넘게가 첫해(8.9%)에 일어났습니다.</p>
       <p class="p">2023년 뇌졸중 발생 4건 중 1건(25.3%)은 재발입니다.</p>
+      </div>
       <p class="src">출처: 질병관리청 초발 뇌졸중 코호트(2022), 2023 심뇌혈관질환 발생통계</p>
     </div>
-  </div>
+  </details>
   <div class="dir"><b>설계 방향</b><span>진단 후 1~3년차 3배, 4~5년차 2배를 받는 ‘초기집중보장형’으로 첫 치료를 두텁게, 10년 이후 재발은 기간 제한 없는 보장으로 잇습니다. 해마다 다시 받는 치료별 연간 보장을 중심에 둡니다.</span></div>
+</section>
+
+<!-- 2-4 -->
+<section class="view pad" data-view="trend-4" hidden>
+  <div class="vh"><span class="k">2 · 웬만하면 다 치료한다 · ④</span><h1>어떻게 치료하고 있나</h1><p>암치료의 트렌드</p></div>
+  <div class="card col" style="gap:18px">
+    <h3>암 치료 건수 구성</h3>
+    <div class="kpi"><span class="num" style="color:var(--risk)">수술 6.3%</span><span class="lb">370,177건 중 23,350건</span></div>
+    <div class="mix" role="img" aria-label="수술 6.3% 23,350건, 방사선치료 30.3% 112,221건, 항암약물 63.4% 234,606건">
+      <div class="m1" style="flex:6.3 1 0"></div>
+      <div class="m2" style="flex:30.3 1 0"><span>방사선치료</span><b>30.3%</b><span>112,221건</span></div>
+      <div class="m3" style="flex:63.4 1 0"><span>항암약물</span><b>63.4%</b><span>234,606건</span></div>
+    </div>
+    <p class="src">서울아산병원 암병원, 2023년 (항암약물은 병원 표기 항암화학요법)</p>
+  </div>
+  <div class="g3">
+    <div class="card col" style="gap:14px">
+      <h3>암병원 이용, 입원 vs 외래</h3>
+      <div class="share" role="img" aria-label="입원 7.2%, 외래 92.8%"><div style="width:7.2%"></div><div style="width:92.8%"></div></div>
+      <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div><div class="big2">입원 7.2%</div><div class="src">83,662명</div></div>
+        <div style="text-align:right"><div class="big2" style="color:var(--risk)">외래 92.8%</div><div class="src">1,085,069명</div></div>
+      </div>
+      <p class="src" style="margin-top:auto">서울아산병원 암병원, 2023년. 같은 환자의 입원과 외래가 각각 집계될 수 있음</p>
+    </div>
+    <div class="card col" style="gap:12px">
+      <h3>로봇수술 실손 보험금</h3>
+      <span class="num big3">+72.4%</span>
+      <p class="src" style="margin-top:auto">2025년, 전년 대비 · 금융감독원 2025년 실손보험 사업실적(잠정)</p>
+    </div>
+    <div class="card col" style="gap:12px">
+      <h3>비급여 항암제 권유받은 환자</h3>
+      <span class="num big3">49%</span>
+      <p class="src" style="margin-top:auto">최근 3년, 암 환자 270명 조사 · 대한종양내과학회(보험저널 2026.9)</p>
+    </div>
+  </div>
+  <p class="src">서울아산병원 수치는 한 병원의 공개 실적이고, 치료 건수는 환자 수가 아닙니다.</p>
+  <div class="dir"><b>설계 방향</b><span>실손보험 보유 여부와 관계없이, 치료를 받을 때마다 정해진 금액이 나오는 독립적인 보장을 준비합니다.</span></div>
 </section>
 
 <!-- 3-1 -->
@@ -471,7 +555,10 @@ footer.ctl .in{display:flex;align-items:center;gap:14px;min-height:64px}
     <li>2023 국가암등록통계, 국립암센터 (암 5년 상대생존율, 암유병자)</li>
     <li>질병관리청 2023 심뇌혈관질환 발생통계 (심근경색 발생, 30일 치명률, 뇌졸중 재발 비중)</li>
     <li>건강보험심사평가원 2주기 암 적정성 평가 (상급종합병원 입원치료 비율)</li>
-    <li>국립암센터 건보 청구자료 분석(2012), NEJM(2017), 가천대 길병원(2017), 질병관리청 초발 뇌졸중 코호트(2022)</li></ul></details>
+    <li>국립암센터 건보 청구자료 분석(2012), NEJM(2017), 가천대 길병원(2017), 질병관리청 초발 뇌졸중 코호트(2022)</li>
+    <li>서울아산병원 암병원 연보 보도(2024.3) (암 치료 건수 구성, 입원·외래 이용)</li>
+    <li>금융감독원 2025년 실손보험 사업실적(잠정) 보도 (로봇수술 실손 보험금 증가율)</li>
+    <li>대한종양내과학회 암 환자 270명 조사, 보험저널(2026.9) (비급여 항암제 권유 경험)</li></ul></details>
   <p class="fine">본 자료는 공개된 국가통계와 학술연구를 요약한 것이며, 실제 보장 내용과 지급 조건은 약관 및 상품설명서를 따릅니다. 암 확률은 인구 전체의 통계 평균이며 개인의 실제 위험을 예측하지 않습니다. 2026년 10월 기준.</p>
 </section>
 </main>
@@ -575,7 +662,7 @@ function won(m){
   const SECS=['암이 얼마나 가까이에 있나','웬만하면 다 치료한다','주요질병의 보장내용','근거·출처'];
   const VIEWS=[
     {id:'risk',s:0,l:'암이 얼마나 가까이에 있나'},
-    {id:'trend-1',s:1,l:'① 생존 증가'},{id:'trend-2',s:1,l:'② 상급종합병원'},{id:'trend-3',s:1,l:'③ 초기 집중과 재발'},
+    {id:'trend-1',s:1,l:'① 생존 증가'},{id:'trend-2',s:1,l:'② 상급종합병원'},{id:'trend-3',s:1,l:'③ 초기 집중과 재발'},{id:'trend-4',s:1,l:'④ 치료 트렌드'},
     {id:'cover-1',s:2,l:'① 치료별 보장'},{id:'cover-2',s:2,l:'② 복합 치료 사례'},{id:'cover-3',s:2,l:'③ 뇌·심장'},
     {id:'basis',s:3,l:'근거·출처'}];
   let cur=0;
@@ -736,7 +823,6 @@ function won(m){
     const open=$('limits').classList.toggle('collapsed')===false;
     $('ctlToggle').setAttribute('aria-expanded',open);
   });
-  if(matchMedia('(min-width:861px)').matches){$('limits').classList.remove('collapsed');$('ctlToggle').setAttribute('aria-expanded','true')}   // 큰 화면은 펼친 채로 시작
 
   /* ---------- "나" 동그라미: 100명 정사각형 안을 무작위로 떠다님 ---------- */
   (function(){
